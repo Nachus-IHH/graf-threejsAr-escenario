@@ -27,9 +27,9 @@ const NOTE_HIT_ZONE_Z = -1.8; // zona donde el jugador debe golpear (en relació
 const NOTE_DESPAWN_Z = 6.0; // z en que se elimina la nota si pasa
 const NOTE_SIZE = 0.6; // tamaño de los cubos
 const SONGS = [
-  { id: 'song_a', name: 'Song A (demo)', file: 'assets/audio/songs/song_a.mp3', pattern: null },
-  { id: 'song_b', name: 'Song B (demo)', file: 'assets/audio/songs/song_b.mp3', pattern: null },
-  { id: 'song_c', name: 'Song C (demo)', file: 'assets/audio/songs/song_c.mp3', pattern: null }
+  { id: 'song_a', name: 'Pollo mago (demo)', file: 'assets/audio/songs/pollo_mago.mp3', pattern: null },
+  { id: 'song_b', name: 'Capibara mistica (demo)', file: 'assets/audio/songs/capibara_mistica.mp3', pattern: null },
+  { id: 'song_c', name: 'Song C (demo)', file: 'assets/audio/songs/pollo_mago.mp3', pattern: null }
 ];
 
 // Zona para elementos DOM
