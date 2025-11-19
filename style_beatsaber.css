@@ -1,0 +1,120 @@
+/* ================================
+   GLOBAL
+================================ */
+body {
+  margin: 0;
+  overflow: hidden;
+  background: black;
+  font-family: Arial, Helvetica, sans-serif;
+  color: white;
+}
+
+canvas#scene {
+  width: 100vw;
+  height: 100vh;
+  display: block;
+}
+
+/* ================================
+   MENU PANEL
+================================ */
+.menu-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 350px;
+  padding: 20px;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+  z-index: 10;
+  text-align: center;
+}
+
+.menu-panel h2 {
+  margin: 0;
+  padding-bottom: 15px;
+  font-size: 26px;
+  text-shadow: 0 0 8px cyan;
+}
+
+/* Lista de canciones */
+#songList {
+  margin-bottom: 20px;
+}
+
+.song-item {
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 8px;
+  background: rgba(0, 255, 255, 0.15);
+  cursor: pointer;
+  transition: 0.2s;
+  border: 1px solid rgba(0, 255, 255, 0.4);
+}
+
+.song-item:hover {
+  background: rgba(0, 255, 255, 0.3);
+}
+
+.song-item.selected {
+  background: rgba(0, 150, 255, 0.5);
+  border-color: white;
+}
+
+/* Botón iniciar */
+#startBtn {
+  width: 100%;
+  padding: 10px 15px;
+  background: cyan;
+  border: none;
+  color: black;
+  font-size: 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#startBtn:hover {
+  background: white;
+}
+
+/* ================================
+   HUD (Score + Combo)
+================================ */
+.hud-panel {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 15px;
+  font-size: 20px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(5px);
+  border-radius: 10px;
+  z-index: 9;
+  box-shadow: 0 0 16px rgba(0, 255, 255, 0.4);
+}
+
+/* Textos dentro del HUD */
+#score, #combo {
+  font-weight: bold;
+  color: cyan;
+  text-shadow: 0 0 8px cyan;
+}
+
+/* ================================
+   RESPONSIVE
+================================ */
+@media (max-width: 600px) {
+  .menu-panel {
+    width: 90%;
+  }
+  .hud-panel {
+    font-size: 16px;
+  }
+}

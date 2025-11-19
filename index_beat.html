@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Pollo Magazzo VR • Three.js</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="style_beatsaber.css" />
+
+    <!-- Importmap: Three.js + Addons -->
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.1/examples/jsm/"
+      }
+    }
+    </script>
+  </head>
+
+  <body>
+
+    <!-- Audio ambiente opcional -->
+    <!-- <audio id="ambient" src="assets/audio/forest_night.mp3" preload="auto" loop></audio> -->
+
+    <!-- MENÚ DE SELECCIÓN DE CANCIONES -->
+    <div id="menu" class="menu-panel">
+      <h2>Selecciona una canción</h2>
+      <div id="songList"></div>
+      <button id="startBtn">Iniciar Juego</button>
+    </div>
+
+    <!-- HUD (marcador en VR) -->
+    <div id="hud" class="hud-panel">
+      Score: <span id="score">0</span> 
+      &nbsp; | &nbsp;
+      Combo: <span id="combo">0</span>
+    </div>
+
+    <!-- Canvas principal WebGL -->
+    <canvas id="scene"></canvas>
+
+    <!-- Script Main (el que generamos en el canvas) -->
+    <script type="module" src="main_beatsaber.js"></script>
+
+  </body>
+</html>
