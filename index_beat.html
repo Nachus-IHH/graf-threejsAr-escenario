@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Pollo Magazzo VR • Three.js</title>
+    <title>Beat Saber VR • Three.js</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="style_beatsaber.css" />
 
@@ -18,29 +18,44 @@
   </head>
 
   <body>
+    <!-- Audio ambiente (se puede escuchar fuera y dentro de VR) -->
+    <audio id="ambient" src="assets/audio/forest_night.mp3" preload="auto" loop></audio>
 
-    <!-- Audio ambiente opcional -->
-    <!-- <audio id="ambient" src="assets/audio/forest_night.mp3" preload="auto" loop></audio> -->
-
-    <!-- MENÚ DE SELECCIÓN DE CANCIONES -->
+    <!-- MENÚ PRINCIPAL -->
     <div id="menu" class="menu-panel">
       <h2>Selecciona una canción</h2>
       <div id="songList"></div>
       <button id="startBtn">Iniciar Juego</button>
     </div>
 
-    <!-- HUD (marcador en VR) -->
+    <!-- HUD (Score + Combo) -->
     <div id="hud" class="hud-panel">
-      Score: <span id="score">0</span> 
+      Score: <span id="score">0</span>
       &nbsp; | &nbsp;
       Combo: <span id="combo">0</span>
+    </div>
+
+    <!-- PAUSE / IN-GAME MENU (oculto hasta que se pause con mando) -->
+    <div id="pauseMenu" class="menu-panel" style="display:none;">
+      <h2>Pausa</h2>
+      <button id="resumeBtn">Continuar</button>
+      <button id="restartBtn">Reiniciar</button>
+      <button id="backMenuBtn">Volver al Menú</button>
+    </div>
+
+    <!-- RESULT / END SCREEN -->
+    <div id="resultScreen" class="menu-panel" style="display:none;">
+      <h2>Fin de la Canción</h2>
+      <p>Score: <span id="finalScore">0</span></p>
+      <p>Max Combo: <span id="finalCombo">0</span></p>
+      <button id="resultRestartBtn">Reiniciar</button>
+      <button id="resultMenuBtn">Volver al Menú</button>
     </div>
 
     <!-- Canvas principal WebGL -->
     <canvas id="scene"></canvas>
 
-    <!-- Script Main (el que generamos en el canvas) -->
+    <!-- Script Main -->
     <script type="module" src="main_beatsaber.js"></script>
-
   </body>
 </html>
