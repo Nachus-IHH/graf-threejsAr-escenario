@@ -570,15 +570,7 @@ function runCountdown(n, cb) {
   }, 900);
 }
 
-/* pause / resume using controller squeeze
-function openPauseMenu() {
-  if (!playing) return;
-  paused = true;
-  pauseMenu.style.display = 'block';
-  if (musicAudio && musicAudio.isPlaying) musicAudio.pause();
-  setAmbientVolume(0.18);
-}
-*/
+/* pause / resume using controller squeeze*/
 function openPauseMenu() {
   if (!playing) return;
   paused = true;
@@ -599,12 +591,13 @@ function resumeFromPause() {
   if (!playing) return;
   // countdown before resuming
   pauseMenu.style.display = 'none';
-  pauseMenu.style.transform = 'translate(-50%, -50%)';
   runCountdown(3, () => {
     paused = false;
     if (musicAudio && !musicAudio.isPlaying) musicAudio.play();
     setAmbientVolume(0.12);
   });
+  // ⭐ Restauramos la posición solo a centrado 2D
+  pauseMenu.style.transform = 'translate(-50%, -50%)'; 
 }
 function resetToMenu() {
   clearNotes();
@@ -615,13 +608,12 @@ function resetToMenu() {
   menuEl.style.display = 'block';
   pauseMenu.style.display = 'none';
   resultScreen.style.display = 'none';
-  // ⭐ NUEVO: Restaurar posición de resultados y menú de pausa (por si acaso)
-  pauseMenu.style.transform = 'translate(-50%, -50%)';
-  resultScreen.style.transform = 'translate(-50%, -50%)';
-
   score = 0; combo = 0; maxCombo = 0;
   if (hudScore) hudScore.textContent = '0';
   if (hudCombo) hudCombo.textContent = '0';
+  // ⭐ Restaurar a centrado 2D
+  pauseMenu.style.transform = 'translate(-50%, -50%)';
+  resultScreen.style.transform = 'translate(-50%, -50%)';
 }
 function restartSong() {
   if (!activeSong) return;
@@ -771,7 +763,8 @@ function update(dt) {
     if (renderer.xr.isPresenting) {
       resultScreen.style.transform = 'translate(-50%, -50%) translate3d(0, 0, -1.5m)';
     } else {
-      resultScreen.style.transform = 'translate(-50%, -50%)';
+        // Aseguramos que solo esté centrado en 2D
+        resultScreen.style.transform = 'translate(-50%, -50%)';
     }
   }
 
