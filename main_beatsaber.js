@@ -209,7 +209,24 @@ function playSfx(buffer, vol = 0.9) {
 }
 
 /* ========== VR CONTROLLERS + SABERS ========== */
-const vrBtn = VRButton.createButton(renderer); vrBtn.classList.add('vr-button'); document.body.appendChild(vrBtn);
+/*
+const vrBtn = VRButton.createButton(renderer); vrBtn.classList.add('vr-button'); 
+//document.body.appendChild(vrBtn);
+document.body.appendChild(VRButton.createButton(renderer, {
+  optionalFeatures: ["dom-overlay"],
+  domOverlay: { root: document.body }
+}));
+*/
+// ACTIVA VR + DOM OVERLAY
+const vrBtn = VRButton.createButton(renderer, {
+  optionalFeatures: ["dom-overlay"],       // habilita DOM Overlay dentro del visor VR
+  domOverlay: { root: document.body }      // qué elementos HTML serán visibles en VR
+});
+// clase opcional para estilizar el botón VR
+vrBtn.classList.add('vr-button');
+// agrega el botón a la página
+document.body.appendChild(vrBtn);
+
 
 const controllerLeft = renderer.xr.getController(0);
 const controllerRight = renderer.xr.getController(1);
@@ -581,7 +598,7 @@ function openPauseMenu() {
   // ⭐ NUEVO: Ajuste para VR: Reposicionar el menú delante de la cámara
   if (renderer.xr.isPresenting) {
     // Mover y rotar para que aparezca en el espacio virtual (ej. a 1.5 metros de distancia)
-    pauseMenu.style.transform = 'translate(-50%, -50%) translate3d(0, 0, -1.5m)';
+    pauseMenu.style.transform = "translate(-50%, -50%)";
   } else {
     // Restaurar la posición para el modo de escritorio (centrado en la pantalla)
     pauseMenu.style.transform = 'translate(-50%, -50%)';

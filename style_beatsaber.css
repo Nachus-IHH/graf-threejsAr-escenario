@@ -11,6 +11,17 @@ body {
 }
 canvas#scene { width:100vw; height:100vh; display:block; }
 
+#menu, 
+#pauseMenu, 
+#resultScreen, 
+#hud, 
+#countdown {
+  z-index: 999999 !important;
+  position: absolute;
+  pointer-events: auto;
+}
+
+
 /* ===========================
     MENU - ESTILO OSU! REDISEÑADO
     =========================== */
