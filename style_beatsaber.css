@@ -1,119 +1,123 @@
-/* ================================
+/* ===========================
    GLOBAL
-================================ */
+   =========================== */
+* { box-sizing: border-box; }
 body {
   margin: 0;
   overflow: hidden;
-  background: black;
-  font-family: Arial, Helvetica, sans-serif;
-  color: white;
+  background: #030306;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  color: #fff;
 }
+canvas#scene { width:100vw; height:100vh; display:block; }
 
-canvas#scene {
-  width: 100vw;
-  height: 100vh;
-  display: block;
-}
-
-/* ================================
-   MENU PANEL
-================================ */
+/* ===========================
+   MENU - estilo tipo osu!
+   =========================== */
 .menu-panel {
   position: absolute;
   top: 50%;
-  left: 50%;
-  width: 360px;
-  padding: 18px;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.60);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 14px;
+  left: 6%;
+  width: 420px;
+  max-height: 80vh;
+  transform: translateY(-50%);
+  padding: 14px;
+  background: rgba(0,0,0,0.55);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  z-index: 12;
   backdrop-filter: blur(6px);
-  box-shadow: 0 0 24px rgba(0, 255, 255, 0.18);
-  z-index: 10;
-  text-align: center;
 }
 
-.menu-panel h2 {
-  margin: 0;
-  padding-bottom: 12px;
-  font-size: 24px;
-  text-shadow: 0 0 8px cyan;
-}
+/* Title */
+.menu-panel h2 { margin:0 0 10px 0; font-size:20px; color:#fff; }
 
-/* Lista de canciones */
-#songList {
-  margin-bottom: 14px;
-  max-height: 220px;
-  overflow-y: auto;
-}
+/* SONG LIST */
+.song-list { overflow-y: auto; max-height: 48vh; padding-right: 6px; }
 
-.song-item {
-  padding: 10px;
-  margin: 6px 0;
-  border-radius: 8px;
-  background: rgba(0, 255, 255, 0.10);
-  cursor: pointer;
-  transition: 0.18s;
-  border: 1px solid rgba(0, 255, 255, 0.18);
-}
-
-.song-item:hover {
-  transform: translateY(-2px);
-  background: rgba(0, 255, 255, 0.22);
-}
-
-.song-item.selected {
-  background: rgba(0, 140, 255, 0.45);
-  border-color: white;
-}
-
-/* Botones */
-.menu-panel button {
-  width: 100%;
-  padding: 10px 12px;
-  margin-top: 8px;
-  background: cyan;
-  border: none;
-  color: black;
-  font-size: 17px;
+/* Song card (inspirado en osu selection) */
+.song-card {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  padding: 8px;
+  margin-bottom: 10px;
   border-radius: 8px;
   cursor: pointer;
-  transition: 0.14s;
+  border: 1px solid rgba(255,255,255,0.04);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.song-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+
+/* thumbnail */
+.song-thumb {
+  width: 88px;
+  height: 56px;
+  border-radius: 6px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
-.menu-panel button:hover {
-  background: #eafcff;
-}
+/* info */
+.song-info { flex:1; min-width:0; }
+.song-title { font-weight:700; font-size:14px; color:#fff; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.song-sub { font-size:12px; color: rgba(255,255,255,0.72); margin-bottom:6px; }
 
-/* ================================
-   HUD (Score + Combo)
-================================ */
+/* stars + duration row */
+.song-meta { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.stars { color: #ffd66b; font-size:12px; }
+.song-duration { font-size:12px; color:rgba(255,255,255,0.7); }
+
+/* selected visual */
+.song-card.selected { outline: 2px solid rgba(0,200,255,0.18); transform: translateY(-6px); }
+
+/* difficulties block */
+#difficulties { margin-top: 8px; margin-bottom:8px; }
+.diff-row { display:flex; gap:8px; justify-content:space-between; }
+.diff-btn {
+  flex:1;
+  padding: 8px;
+  border-radius: 8px;
+  border:none;
+  background: rgba(255,255,255,0.06);
+  color: white;
+  cursor:pointer;
+  font-weight:600;
+}
+.diff-btn.selected { background: linear-gradient(90deg, rgba(0,200,255,0.12), rgba(0,150,255,0.12)); box-shadow: 0 6px 22px rgba(0,200,255,0.06); }
+
+/* START button */
+#startBtn { width:100%; padding:10px; border-radius:8px; border:none; background: linear-gradient(90deg,#00e0ff,#00aaff); color:black; font-weight:700; cursor:pointer; margin-top:8px; }
+
+/* HUD */
 .hud-panel {
+  position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  background: rgba(0,0,0,0.55); padding:8px 12px; border-radius:10px; z-index:11; font-weight:600;
+  border:1px solid rgba(255,255,255,0.06);
+}
+
+/* Pause/Result same style as menu, placed centered */
+.menu-panel.center { left:50%; transform: translate(-50%,-50%); width:320px; }
+
+/* Countdown big display */
+.countdown {
   position: absolute;
-  top: 10px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
-  padding: 8px 12px;
-  font-size: 18px;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(4px);
-  border-radius: 10px;
-  z-index: 9;
-  box-shadow: 0 0 14px rgba(0, 255, 255, 0.16);
+  transform: translate(-50%, -55%);
+  font-size: 160px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 6px 40px rgba(0,0,0,0.75), 0 0 24px rgba(0,200,255,0.15);
+  z-index: 30;
+  pointer-events: none;
 }
 
-#score, #combo {
-  font-weight: bold;
-  color: cyan;
-  text-shadow: 0 0 8px cyan;
-}
-
-/* ================================
-   RESPONSIVE
-================================ */
-@media (max-width: 600px) {
-  .menu-panel { width: 90%; }
-  .hud-panel { font-size: 16px; }
+/* responsive */
+@media (max-width: 880px) {
+  .menu-panel { left:4%; width: 360px; }
+  .countdown { font-size: 110px; }
 }
