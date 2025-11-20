@@ -14,9 +14,10 @@ const PLAYER_RADIUS = 0.35;
 const OBJ_TREE_R = 0.6;
 const WORLD_RADIUS = WORLD_SIZE * 0.5 - 1.0;
 
-// HDRI: usa exactamente las constantes que pediste
+// HDRI
 const HDRI_LOCAL = 'assets/hdr/evening_museum.hdr';
 const HDRI_FALLBACK = 'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/evening_museum.hdr';
+const DANCE_MAT_TEXTURE = 'assets/img/dance_mat.png';
 
 /* GAMEPLAY */
 const NOTE_SPEED = 14.0;
@@ -93,7 +94,6 @@ renderer.autoClear = true;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x06101a);
-scene.fog = new THREE.FogExp2(0x06101a, 0.028);
 
 const bgScene = new THREE.Scene();
 const bgCam = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 5000);
@@ -115,6 +115,27 @@ async function setHDRI(url) {
 }
 setHDRI(HDRI_LOCAL).catch(() => setHDRI(HDRI_FALLBACK).catch(e => console.warn('Sin HDRI:', e)));
 
+/* Tapete de baile del jugador - piso 
+const textureLoader = new THREE.TextureLoader();
+textureLoader.load(DANCE_MAT_TEXTURE, (texture) => {
+    const planeGeometry = new THREE.PlaneGeometry(6, 4); // Ajusta el tamaño (6x4 es grande)
+    
+    // Crear material con la textura. Usa alphaMap si el tapete tiene transparencia.
+    const planeMaterial = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true, // Importante para que se vea el fondo
+        side: THREE.DoubleSide
+    });
+    
+    const danceMat = new THREE.Mesh(planeGeometry, planeMaterial);
+    danceMat.rotation.x = -Math.PI / 2; 
+    
+    // Posicionarlo en el centro de la zona de golpe (Z=-1.8) y en el suelo (Y=0.01)
+    danceMat.position.y = 0.01; 
+    danceMat.position.z = NOTE_HIT_ZONE_Z; // Zona de golpe
+    camera.add(danceMat); 
+});
+*/
 /* Lights */
 const hemiLight = new THREE.HemisphereLight(0x8fb2ff, 0x0a0c10, 0.35);
 scene.add(hemiLight);
@@ -125,41 +146,6 @@ moonLight.shadow.camera.near = 0.5;
 moonLight.shadow.camera.far = 220;
 scene.add(moonLight);
 
-/* ========== TERRAIN (perlin + mesh) - BASIC from source ========== */
-function makePerlin(seed = 1337) {
-  const p = new Uint8Array(512);
-  for (let i = 0; i < 256; i++) p[i] = i;
-  let n, q;
-  for (let i = 255; i > 0; i--) { n = Math.floor((seed = (seed * 16807) % 2147483647) / 2147483647 * (i + 1)); q = p[i]; p[i] = p[n]; p[n] = q; }
-  for (let i = 0; i < 256; i++) p[256 + i] = p[i];
-  const grad = (h, x, y) => { switch (h & 3) { case 0: return x + y; case 1: return -x + y; case 2: return x - y; default: return -x - y; } };
-  const fade = t => t * t * t * (t * (t * 6. - 15.) + 10.);
-  const lerp = (a, b, t) => a + t * (b - a);
-  return function noise(x, y) {
-    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255; x -= Math.floor(x); y -= Math.floor(y);
-    const u = fade(x), v = fade(y), A = p[X] + Y, B = p[X + 1] + Y;
-    return lerp(lerp(grad(p[A], x, y), grad(p[B], x - 1., y), u),
-      lerp(grad(p[A + 1], x, y - 1.), grad(p[B + 1], x - 1., y - 1.), u), v);
-  };
-}
-const noise2D = makePerlin(2025);
-
-const terrainGeo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, TERRAIN_RES, TERRAIN_RES);
-terrainGeo.rotateX(-Math.PI / 2);
-const tPos = terrainGeo.attributes.position;
-for (let i = 0; i < tPos.count; i++) {
-  const x = tPos.getX(i), z = tPos.getZ(i);
-  const h = noise2D(x * 0.02, z * 0.02) * 0.6 + noise2D(x * 0.05, z * 0.05) * 0.25 + noise2D(x * 0.1, z * 0.1) * 0.1;
-  tPos.setY(i, h * TERRAIN_MAX_H);
-}
-tPos.needsUpdate = true;
-terrainGeo.computeVertexNormals();
-terrainGeo.setAttribute('uv2', new THREE.BufferAttribute(new Float32Array(terrainGeo.attributes.uv.array), 2));
-
-const terrainMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1c, roughness: 1.0, metalness: 0.0 });
-const terrain = new THREE.Mesh(terrainGeo, terrainMat);
-terrain.receiveShadow = true;
-scene.add(terrain);
 
 /* Raycast helpers (terrain height) */
 const raycaster = new THREE.Raycaster();
@@ -184,20 +170,6 @@ function clampToWorld(v) {
   return v;
 }
 
-/* ========== TREES (colliders) para limitar collisiones laterales si lo deseas ========== */
-const treeColliders = [];
-function addTree(x, z, scale = 1) {
-  // solo collider (no modelo pesado)
-  treeColliders.push({ x, z, r: OBJ_TREE_R * scale });
-}
-for (let i = 0; i < TREE_COUNT; i++) {
-  let x = (Math.random() - 0.5) * WORLD_SIZE, z = (Math.random() - 0.5) * WORLD_SIZE;
-  if (Math.hypot(x - player.position.x, z - player.position.z) < 6) {
-    const a = Math.random() * Math.PI * 2, r = 8 + Math.random() * 20;
-    x = player.position.x + Math.cos(a) * r; z = player.position.z + Math.sin(a) * r;
-  }
-  addTree(x, z, 0.8 + Math.random() * 1.8);
-}
 
 /* ========== AUDIO ========== */
 const listener = new THREE.AudioListener(); camera.add(listener);
@@ -253,7 +225,7 @@ function makeSaberMesh() {
   const m = new THREE.Mesh(geo, mat);
   m.rotation.x = Math.PI / 2;
   // elevar sabers (punto 3)
-  m.position.set(0, -0.25, 0);
+  m.position.set(0, -0.25, 3);
   return m;
 }
 const saberL = makeSaberMesh(); controllerLeft.add(saberL);
@@ -285,24 +257,24 @@ function chooseSpawnZ() {
     // Escoger una Z aleatoria dentro de la zona de spawn
     const z = NOTE_SPAWN_Z + (Math.random() - 0.5) * 3.5;
     const key = roundZKey(z);
-    
+
     // 1. Verificar el límite de MAX_SAME_Z
     const count = activeZCounts.get(key) || 0;
     if (count >= MAX_SAME_Z) continue;
-    
+
     // 2. Verificar la separación mínima (MIN_Z_SEPARATION)
     let ok = true;
     for (const existingKey of activeZCounts.keys()) {
       // Si la distancia entre la nueva Z y una Z existente es menor que la separación mínima, fallar.
-      if (Math.abs(existingKey - key) < MIN_Z_SEPARATION) { 
-        ok = false; 
-        break; 
+      if (Math.abs(existingKey - key) < MIN_Z_SEPARATION) {
+        ok = false;
+        break;
       }
     }
-    
+
     if (ok) return { z, key };
   }
-  
+
   // fallback: return spawn z regardless (will allow some overlap)
   const fallz = NOTE_SPAWN_Z;
   return { z: fallz, key: roundZKey(fallz) };
@@ -431,7 +403,7 @@ function buildSongList() {
       // B. Marcar seleccionada y actualizar fondo
       document.querySelectorAll('.song-card').forEach(x => x.classList.remove('selected'));
       card.classList.add('selected');
-      
+
       // Cambio de fondo del menú principal
       menuEl.style.backgroundImage = `url('${s.thumb}')`;
       menuEl.style.backgroundSize = 'cover';
@@ -439,11 +411,11 @@ function buildSongList() {
 
       // C. Reproducir previsualización (usando el buffer cargado)
       if (musicBuffers[s.id]) { // Verificar que el buffer esté cargado
-          previewAudio = new THREE.Audio(listener);
-          previewAudio.setBuffer(musicBuffers[s.id]);
-          previewAudio.setLoop(true); // Se reproduce en bucle
-          previewAudio.setVolume(0.7);
-          previewAudio.play(0.8); // Iniciar la reproducción desde el segundo 0.8
+        previewAudio = new THREE.Audio(listener);
+        previewAudio.setBuffer(musicBuffers[s.id]);
+        previewAudio.setLoop(true); // Se reproduce en bucle
+        previewAudio.setVolume(0.7);
+        previewAudio.play(0.8); // Iniciar la reproducción desde el segundo 0.8
       }
 
       // D. Mostrar y actualizar dificultades UI
@@ -452,7 +424,7 @@ function buildSongList() {
       document.querySelectorAll('.diff-btn').forEach(btn => {
         const diff = btn.dataset.diff;
         btn.querySelector('.stars')?.remove();
-        
+
         const sp = document.createElement('span');
         sp.className = 'stars';
         sp.textContent = createStarMarkup(s.diffs[diff] || 0);
@@ -470,12 +442,12 @@ function buildSongList() {
 
     songListEl.appendChild(card);
   }
-  
+
   // ⭐️ INICIALIZACIÓN: SELECCIONAR LA PRIMERA CANCIÓN AL CARGAR ⭐️
   const firstCard = songListEl.querySelector('.song-card');
   if (firstCard) {
-      // Simular el clic en la primera tarjeta para inicializar la UI Y el audio
-      firstCard.click(); 
+    // Simular el clic en la primera tarjeta para inicializar la UI Y el audio
+    firstCard.click();
   }
 }
 
@@ -502,7 +474,7 @@ if (startBtn) startBtn.addEventListener('click', () => {
 function prepareAndStartSong(songId, diff) {
   const s = SONGS.find(x => x.id === songId);
   if (!s) return;
-  
+
   // set pattern scaling by diff (hard -> denser)
   const density = diff === 'easy' ? 0.8 : diff === 'hard' ? 1.4 : 1.0;
   s.pattern = genPatternForDuration(s.duration, density);
@@ -522,9 +494,9 @@ function startSongInternal(s, density) { // 👈 ACEPTAR EL PARÁMETRO DENSITY
   // stopPreviewAudio(); // Si lo tienes, descoméntalo o añádelo aquí
 
   // 👈 AJUSTAR VELOCIDAD DE NOTAS BASADA EN LA DIFICULTAD/DENSIDAD
-  const currentNoteSpeed = NOTE_SPEED * (1.0 + (density - 1.0) * 0.4); 
-  s.currentNoteSpeed = currentNoteSpeed; 
-  
+  const currentNoteSpeed = NOTE_SPEED * (1.0 + (density - 1.0) * 0.4);
+  s.currentNoteSpeed = currentNoteSpeed;
+
   // audio
   if (musicAudio) { try { musicAudio.stop(); } catch (e) { } musicAudio = null; }
   if (musicBuffers[s.id]) {
@@ -701,6 +673,18 @@ function update(dt) {
     patternIdx++;
   }
 
+  // Aplicar restricción de movimiento al jugador (usando la cámara para simplificar)
+  const maxDist = WORLD_RADIUS - PLAYER_RADIUS;
+  const currentDist = Math.sqrt(camera.position.x ** 2 + camera.position.z ** 2);
+
+  if (currentDist > maxDist) {
+    // Escalar la posición para que no exceda el límite
+    const ratio = maxDist / currentDist;
+    camera.position.x *= ratio;
+    camera.position.z *= ratio;
+    // Opcional: También podrías mover el grupo `playerGroup` si existe.
+  }
+
   // move notes: increase z towards player
   for (let i = notes.length - 1; i >= 0; i--) {
     const n = notes[i];
@@ -728,6 +712,8 @@ function update(dt) {
     finalComboEl.textContent = String(maxCombo);
     resultScreen.style.display = 'block';
   }
+
+
 }
 
 /* ========== RENDER LOOP ========= */
