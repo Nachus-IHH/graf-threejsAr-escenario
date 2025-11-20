@@ -230,27 +230,25 @@ function makeSaberMesh() {
 }
 */
 function makeSaberMesh(color = 0x00c8ff, length = 1.4) {
-    // 1. Crear el cilindro o la caja para la hoja del sable
-    const bladeGeo = new THREE.CylinderGeometry(0.02, 0.02, length, 8);
-    
-    // 2. ⭐ CORRECCIÓN CLAVE: DESPLAZAR LA GEOMETRÍA HACIA ABAJO
-    // Si la longitud es 1.4, la mitad (0.7) está en Y=0. Moviéndolo -0.7 asegura que se extienda hacia abajo.
-    bladeGeo.translate(0, -length / 2, 0); 
-    
-    const mat = new THREE.MeshBasicMaterial({ color, emissive: color, emissiveIntensity: 2.0 });
-    const saberBlade = new THREE.Mesh(bladeGeo, mat);
-    
-    // 3. Crear el mango (handle)
-    const handleGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.2, 8);
-    const handleMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8 });
-    const handle = new THREE.Mesh(handleGeo, handleMat);
-    handle.position.y = 0.1; // Posición del mango justo en el punto de anclaje
-    
-    const saber = new THREE.Group();
-    saber.add(saberBlade);
-    saber.add(handle);
-    
-    return saber;
+  // 1. Crear el cilindro o la caja para la hoja del sable
+  const bladeGeo = new THREE.CylinderGeometry(0.02, 0.02, length, 8);
+  // Si la longitud es 1.4, la mitad (0.7) está en Y=0. Moviéndolo -0.7 asegura que se extienda hacia abajo.
+  bladeGeo.translate(0, -length / 2, 0);
+
+  const mat = new THREE.MeshBasicMaterial({ color, emissive: color, emissiveIntensity: 2.0 });
+  const saberBlade = new THREE.Mesh(bladeGeo, mat);
+
+  // 3. Crear el mango (handle)
+  const handleGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.2, 8);
+  const handleMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8 });
+  const handle = new THREE.Mesh(handleGeo, handleMat);
+  handle.position.y = 0.1; // Posición del mango justo en el punto de anclaje
+
+  const saber = new THREE.Group();
+  saber.add(saberBlade);
+  saber.add(handle);
+
+  return saber;
 }
 const saberL = makeSaberMesh(); controllerLeft.add(saberL);
 const saberR = makeSaberMesh(); controllerRight.add(saberR);
@@ -572,7 +570,7 @@ function runCountdown(n, cb) {
   }, 900);
 }
 
-/* pause / resume using controller squeeze */
+/* pause / resume using controller squeeze
 function openPauseMenu() {
   if (!playing) return;
   paused = true;
@@ -580,10 +578,28 @@ function openPauseMenu() {
   if (musicAudio && musicAudio.isPlaying) musicAudio.pause();
   setAmbientVolume(0.18);
 }
+*/
+function openPauseMenu() {
+  if (!playing) return;
+  paused = true;
+  pauseMenu.style.display = 'block';
+  if (musicAudio && musicAudio.isPlaying) musicAudio.pause();
+  setAmbientVolume(0.18);
+
+  // ⭐ NUEVO: Ajuste para VR: Reposicionar el menú delante de la cámara
+  if (renderer.xr.isPresenting) {
+    // Mover y rotar para que aparezca en el espacio virtual (ej. a 1.5 metros de distancia)
+    pauseMenu.style.transform = 'translate(-50%, -50%) translate3d(0, 0, -1.5m)';
+  } else {
+    // Restaurar la posición para el modo de escritorio (centrado en la pantalla)
+    pauseMenu.style.transform = 'translate(-50%, -50%)';
+  }
+}
 function resumeFromPause() {
   if (!playing) return;
   // countdown before resuming
   pauseMenu.style.display = 'none';
+  pauseMenu.style.transform = 'translate(-50%, -50%)';
   runCountdown(3, () => {
     paused = false;
     if (musicAudio && !musicAudio.isPlaying) musicAudio.play();
@@ -599,6 +615,10 @@ function resetToMenu() {
   menuEl.style.display = 'block';
   pauseMenu.style.display = 'none';
   resultScreen.style.display = 'none';
+  // ⭐ NUEVO: Restaurar posición de resultados y menú de pausa (por si acaso)
+  pauseMenu.style.transform = 'translate(-50%, -50%)';
+  resultScreen.style.transform = 'translate(-50%, -50%)';
+
   score = 0; combo = 0; maxCombo = 0;
   if (hudScore) hudScore.textContent = '0';
   if (hudCombo) hudCombo.textContent = '0';
@@ -647,7 +667,7 @@ function checkHits() {
       // hit: spawn hit effect at the hand used
       const usedPos = dL < dR ? tipL : tipR;
       spawnHitEffect(usedPos);
-      playSfx(chimeBuffer, 1.0);
+      playSfx(chimeBuffer, 0.35);
 
       // scoring better if closer to center (zt small)
       const add = Math.max(50, Math.floor((0.5 - zt) * 200));
@@ -715,7 +735,7 @@ function update(dt) {
     n.position.z += speed * dt;
     // if passes despawn -> miss
     if (n.position.z > NOTE_DESPAWN_Z) {
-      playSfx(windBuffer, 0.6);
+      playSfx(windBuffer, 0.25);
       removeNoteAtIndex(i);
       combo = 0;
       if (hudCombo) hudCombo.textContent = String(combo);
@@ -727,6 +747,7 @@ function update(dt) {
 
   // check end: when song duration passed and no notes
   const songDuration = (activeSong && activeSong.pattern) ? (activeSong.pattern[activeSong.pattern.length - 1]?.t + 4.0) : (activeSong?.duration || 60);
+  /*
   if (now > songDuration && notes.length === 0) {
     playing = false;
     if (musicAudio) { try { musicAudio.stop(); } catch (e) { } musicAudio = null; }
@@ -735,6 +756,23 @@ function update(dt) {
     finalScoreEl.textContent = String(score);
     finalComboEl.textContent = String(maxCombo);
     resultScreen.style.display = 'block';
+  }
+  */
+  if (now > songDuration && notes.length === 0) {
+    playing = false;
+    if (musicAudio) { try { musicAudio.stop(); } catch (e) { } musicAudio = null; }
+    setAmbientVolume(0.4);
+    // show results
+    finalScoreEl.textContent = String(score);
+    finalComboEl.textContent = String(maxCombo);
+    resultScreen.style.display = 'block';
+
+    // ⭐ NUEVO: Ajuste para VR: Reposicionar la pantalla de resultados
+    if (renderer.xr.isPresenting) {
+      resultScreen.style.transform = 'translate(-50%, -50%) translate3d(0, 0, -1.5m)';
+    } else {
+      resultScreen.style.transform = 'translate(-50%, -50%)';
+    }
   }
 
 
