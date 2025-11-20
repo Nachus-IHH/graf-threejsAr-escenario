@@ -282,17 +282,27 @@ function chooseSpawnZ() {
   // We'll pick candidate z values along spawn band and check spacing
   const attempts = 20;
   for (let a = 0; a < attempts; a++) {
+    // Escoger una Z aleatoria dentro de la zona de spawn
     const z = NOTE_SPAWN_Z + (Math.random() - 0.5) * 3.5;
     const key = roundZKey(z);
+    
+    // 1. Verificar el límite de MAX_SAME_Z
     const count = activeZCounts.get(key) || 0;
     if (count >= MAX_SAME_Z) continue;
-    // ensure min separation vs other active z keys
+    
+    // 2. Verificar la separación mínima (MIN_Z_SEPARATION)
     let ok = true;
     for (const existingKey of activeZCounts.keys()) {
-      if (Math.abs(existingKey - key) < MIN_Z_SEPARATION) { ok = false; break; }
+      // Si la distancia entre la nueva Z y una Z existente es menor que la separación mínima, fallar.
+      if (Math.abs(existingKey - key) < MIN_Z_SEPARATION) { 
+        ok = false; 
+        break; 
+      }
     }
+    
     if (ok) return { z, key };
   }
+  
   // fallback: return spawn z regardless (will allow some overlap)
   const fallz = NOTE_SPAWN_Z;
   return { z: fallz, key: roundZKey(fallz) };
@@ -492,20 +502,29 @@ if (startBtn) startBtn.addEventListener('click', () => {
 function prepareAndStartSong(songId, diff) {
   const s = SONGS.find(x => x.id === songId);
   if (!s) return;
+  
   // set pattern scaling by diff (hard -> denser)
   const density = diff === 'easy' ? 0.8 : diff === 'hard' ? 1.4 : 1.0;
   s.pattern = genPatternForDuration(s.duration, density);
 
   // countdown then start
   runCountdown(3, () => {
-    startSongInternal(s);
+    startSongInternal(s, density); // 👈 ¡ESTE FUE EL CAMBIO CRÍTICO QUE FALTÓ!
   });
 }
 
-function startSongInternal(s) {
+function startSongInternal(s, density) { // 👈 ACEPTAR EL PARÁMETRO DENSITY
   // clear old notes
   clearNotes();
   stopPreviewAudio();
+  // Detener audio de previsualización (agregado de la respuesta anterior)
+  // Asegúrate de que stopPreviewAudio() esté definido antes de aquí.
+  // stopPreviewAudio(); // Si lo tienes, descoméntalo o añádelo aquí
+
+  // 👈 AJUSTAR VELOCIDAD DE NOTAS BASADA EN LA DIFICULTAD/DENSIDAD
+  const currentNoteSpeed = NOTE_SPEED * (1.0 + (density - 1.0) * 0.4); 
+  s.currentNoteSpeed = currentNoteSpeed; 
+  
   // audio
   if (musicAudio) { try { musicAudio.stop(); } catch (e) { } musicAudio = null; }
   if (musicBuffers[s.id]) {
@@ -670,9 +689,11 @@ function update(dt) {
   if (!playing || paused) return;
 
   const now = performance.now() * 0.001 - songStartTime;
+  // OBTENER LA VELOCIDAD DE LA CANCIÓN ACTIVA (o usar la predeterminada si no está definida)
+  const speed = activeSong?.currentNoteSpeed || NOTE_SPEED; // 👈 USAR LA VELOCIDAD CALCULADA
 
-  // spawn from pattern by timing: spawn when pattern time <= now + timeToTravel (abs(NOTE_SPAWN_Z)/NOTE_SPEED)
-  const timeToTravel = Math.abs(NOTE_SPAWN_Z) / NOTE_SPEED;
+  // spawn from pattern by timing: spawn when pattern time <= now + timeToTravel (abs(NOTE_SPAWN_Z)/speed)
+  const timeToTravel = Math.abs(NOTE_SPAWN_Z) / speed; // USAR LA NUEVA VELOCIDAD
   while (patternIdx < pattern.length && pattern[patternIdx].t <= now + timeToTravel) {
     const p = pattern[patternIdx];
     // spawn note at p.lane
@@ -683,7 +704,7 @@ function update(dt) {
   // move notes: increase z towards player
   for (let i = notes.length - 1; i >= 0; i--) {
     const n = notes[i];
-    n.position.z += NOTE_SPEED * dt;
+    n.position.z += speed * dt;
     // if passes despawn -> miss
     if (n.position.z > NOTE_DESPAWN_Z) {
       playSfx(windBuffer, 0.6);
