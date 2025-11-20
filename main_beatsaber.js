@@ -28,10 +28,7 @@ const noteLanes = [-1.8, -0.6, 0.6, 1.8];
 const MIN_Z_SEPARATION = 1.6; // separación mínima entre notas en z para evitar sobreposición
 const MAX_SAME_Z = 2; // máximo 2 notas con la misma z (para pegar con dos manos)
 
-/* SONG METADATA: thumbnail usa la imagen subida por ti
-   Si no es accesible en tu servidor copia a assets/img/ y actualiza la ruta.
-   La ruta de la imagen que me diste es: /mnt/data/345a598e-5c72-418e-b1dc-750df8649743.png
-*/
+
 const SONGS = [
   {
     id: 'song_a',
@@ -47,7 +44,7 @@ const SONGS = [
     name: 'Capibara mistica',
     artist: 'Artist B',
     file: 'assets/audio/songs/capibara_mistica.mp3',
-    duration: 35,
+    duration: 205,
     thumb: 'assets/img/Gemini_capibara_mistica.png',
     diffs: { easy: 1, normal: 3, hard: 4 }
   },
@@ -56,7 +53,7 @@ const SONGS = [
     name: 'Pollo mago',
     artist: 'Artist C',
     file: 'assets/audio/songs/pollo_mago.mp3',
-    duration: 30,
+    duration: 183,
     thumb: 'assets/img/Gemini_pollo_mago.png',
     diffs: { easy: 2, normal: 3, hard: 5 }
   }
@@ -208,6 +205,7 @@ const audioLoader = new THREE.AudioLoader();
 let chimeBuffer = null, windBuffer = null;
 let musicBuffers = {};
 let musicAudio = null;
+let previewAudio = null;
 
 audioLoader.load('assets/audio/effects/hit.wav', b => chimeBuffer = b, undefined, e => console.warn('hit load fail', e));
 audioLoader.load('assets/audio/effects/miss.wav', b => windBuffer = b, undefined, e => console.warn('miss load fail', e));
@@ -218,6 +216,14 @@ for (const s of SONGS) {
 /* ambient element control */
 function setAmbientVolume(v) {
   try { if (ambientEl) ambientEl.volume = v; } catch (e) { }
+}
+
+/* preview audio control */
+function stopPreviewAudio() {
+  if (previewAudio) {
+    try { previewAudio.stop(); } catch (e) { }
+    previewAudio = null;
+  }
 }
 
 /* sfx play */
@@ -360,6 +366,12 @@ function createStarMarkup(n) {
   return out;
 }
 
+// main_beatsaber.js (aproximadamente línea 214)
+
+/* ========== UI: build osu-like song list (cards) ========== */
+// ... (toda la función buildSongList, que es muy larga) ...
+
+/* ========== UI: build osu-like song list (cards) ========== */
 function buildSongList() {
   songListEl.innerHTML = '';
   for (const s of SONGS) {
@@ -369,7 +381,6 @@ function buildSongList() {
 
     const thumb = document.createElement('div');
     thumb.className = 'song-thumb';
-    // use provided thumbnail; if not accessible, leave bg blank
     thumb.style.backgroundImage = `url('${s.thumb}')`;
 
     const info = document.createElement('div');
@@ -387,7 +398,6 @@ function buildSongList() {
     meta.className = 'song-meta';
     const stars = document.createElement('div');
     stars.className = 'stars';
-    // default display normal diff stars
     stars.textContent = createStarMarkup(s.diffs.normal);
     const dur = document.createElement('div');
     dur.className = 'song-duration';
@@ -403,33 +413,59 @@ function buildSongList() {
     card.appendChild(thumb);
     card.appendChild(info);
 
+    // ⭐️ LÓGICA DE AUDIO Y SELECCIÓN AL HACER CLIC ⭐️
     card.addEventListener('click', () => {
-      // mark selected
+      // A. Detener audio anterior (Esencial al cambiar de canción)
+      stopPreviewAudio(); // 👈 Llama a la función de parada
+
+      // B. Marcar seleccionada y actualizar fondo
       document.querySelectorAll('.song-card').forEach(x => x.classList.remove('selected'));
       card.classList.add('selected');
-      // show difficulties UI with star counts
-      difficultiesBlock.style.display = 'block';
+      
+      // Cambio de fondo del menú principal
+      menuEl.style.backgroundImage = `url('${s.thumb}')`;
+      menuEl.style.backgroundSize = 'cover';
+      menuEl.style.backgroundPosition = 'center';
+
+      // C. Reproducir previsualización (usando el buffer cargado)
+      if (musicBuffers[s.id]) { // Verificar que el buffer esté cargado
+          previewAudio = new THREE.Audio(listener);
+          previewAudio.setBuffer(musicBuffers[s.id]);
+          previewAudio.setLoop(true); // Se reproduce en bucle
+          previewAudio.setVolume(0.7);
+          previewAudio.play(0.8); // Iniciar la reproducción desde el segundo 0.8
+      }
+
+      // D. Mostrar y actualizar dificultades UI
+      difficultiesBlock.style.display = 'flex';
       selectedSongTitle.textContent = `${s.name} — ${s.artist}`;
       document.querySelectorAll('.diff-btn').forEach(btn => {
         const diff = btn.dataset.diff;
         btn.querySelector('.stars')?.remove();
-        // update stars inside button
+        
         const sp = document.createElement('span');
         sp.className = 'stars';
         sp.textContent = createStarMarkup(s.diffs[diff] || 0);
         btn.appendChild(sp);
         btn.classList.remove('selected');
       });
-      // default select normal
+      // Default select normal
       chosenDiff = 'normal';
       document.querySelector('.diff-btn[data-diff="normal"]')?.classList.add('selected');
 
-      // set start button dataset
+      // E. Set start button dataset
       startBtn.dataset.song = s.id;
       startBtn.dataset.diff = chosenDiff;
     });
 
     songListEl.appendChild(card);
+  }
+  
+  // ⭐️ INICIALIZACIÓN: SELECCIONAR LA PRIMERA CANCIÓN AL CARGAR ⭐️
+  const firstCard = songListEl.querySelector('.song-card');
+  if (firstCard) {
+      // Simular el clic en la primera tarjeta para inicializar la UI Y el audio
+      firstCard.click(); 
   }
 }
 
@@ -469,6 +505,7 @@ function prepareAndStartSong(songId, diff) {
 function startSongInternal(s) {
   // clear old notes
   clearNotes();
+  stopPreviewAudio();
   // audio
   if (musicAudio) { try { musicAudio.stop(); } catch (e) { } musicAudio = null; }
   if (musicBuffers[s.id]) {
@@ -540,6 +577,7 @@ function resumeFromPause() {
 }
 function resetToMenu() {
   clearNotes();
+  stopPreviewAudio();
   if (musicAudio) { try { musicAudio.stop(); } catch (e) { } musicAudio = null; }
   setAmbientVolume(0.4);
   playing = false; paused = false; activeSong = null;
@@ -694,75 +732,6 @@ addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
 });
-
-/* ========== PATTERN & AUDIO HELPERS: startSong wrapper ========== */
-function startSong(songId, diff = 'normal') {
-  const s = SONGS.find(x => x.id === songId);
-  if (!s) return;
-  // generate pattern with diff density mapping
-  const density = diff === 'easy' ? 0.8 : diff === 'hard' ? 1.4 : 1.0;
-  s.pattern = genPatternForDuration(s.duration, density);
-  pattern = s.pattern.slice();
-  patternIdx = 0;
-  // countdown then start
-  runCountdown(3, () => {
-    // play audio
-    if (musicAudio) { try { musicAudio.stop(); } catch (e) { } musicAudio = null; }
-    if (musicBuffers[s.id]) {
-      musicAudio = new THREE.Audio(listener);
-      musicAudio.setBuffer(musicBuffers[s.id]);
-      musicAudio.setLoop(false);
-      musicAudio.setVolume(0.88);
-      musicAudio.play();
-    } else {
-      console.warn('Música no cargada (aún):', s.file);
-    }
-    // lower ambient
-    setAmbientVolume(0.12);
-    // reset state
-    activeSong = s;
-    playing = true; paused = false;
-    score = 0; combo = 0; maxCombo = 0;
-    songStartTime = performance.now() * 0.001;
-    if (hudScore) hudScore.textContent = String(score);
-    if (hudCombo) hudCombo.textContent = String(combo);
-    menuEl.style.display = 'none';
-    difficultiesBlock.style.display = 'none';
-    resultScreen.style.display = 'none';
-  });
-}
-
-/* countdown helper (shared) */
-function runCountdown(n, cb) {
-  countdownEl.style.display = 'block';
-  let cur = n;
-  countdownEl.textContent = String(cur);
-  const t = setInterval(() => {
-    cur--;
-    if (cur <= 0) {
-      countdownEl.textContent = 'GO';
-      setTimeout(() => {
-        countdownEl.style.display = 'none';
-        clearInterval(t);
-        cb();
-      }, 420);
-    } else {
-      countdownEl.textContent = String(cur);
-    }
-  }, 900);
-}
-
-/* gen pattern helper (same as above) */
-function genPatternForDuration(dur, density = 1.0) {
-  const pat = [];
-  let t = 1.2;
-  while (t < dur - 1) {
-    const lane = Math.floor(Math.random() * noteLanes.length);
-    pat.push({ t: t, lane });
-    t += 0.4 + Math.random() * 0.6 / density;
-  }
-  return pat;
-}
 
 /* ========== UI BUILD & INITIALIZATION ========== */
 buildSongList();

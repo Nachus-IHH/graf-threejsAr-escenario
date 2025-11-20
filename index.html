@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="style_beatsaber.css" />
 
-    <!-- Importmap: Three.js + Addons -->
     <script type="importmap">
     {
       "imports": {
@@ -18,16 +17,15 @@
   </head>
 
   <body>
-    <!-- Ambient audio (se atenúa durante la música) -->
-    <audio id="ambient" src="assets/audio/forest_night.mp3" preload="auto" loop></audio>
-
-    <!-- MENU: lista de canciones estilo osu! -->
     <div id="menu" class="menu-panel">
-      <h2>Selecciona canción</h2>
-      <div id="songList" class="song-list"></div>
+      
+      <div class="song-list-container">
+        <h2>Selecciona canción</h2>
+        <div id="songList" class="song-list"></div>
+      </div>
 
       <div id="difficulties" style="display:none">
-        <h3 id="selectedSongTitle"></h3>
+        <h3 id="selectedSongTitle">Título de la Canción Seleccionada</h3>
         <div class="diff-row">
           <button class="diff-btn" data-diff="easy">Easy <span class="stars" data-stars="2"></span></button>
           <button class="diff-btn" data-diff="normal">Normal <span class="stars" data-stars="3"></span></button>
@@ -38,21 +36,18 @@
       <button id="startBtn">Iniciar</button>
     </div>
 
-    <!-- HUD -->
     <div id="hud" class="hud-panel">
       Score: <span id="score">0</span> &nbsp; | &nbsp; Combo: <span id="combo">0</span>
     </div>
 
-    <!-- Pausa / menú in-game -->
-    <div id="pauseMenu" class="menu-panel" style="display:none;">
+    <div id="pauseMenu" class="menu-panel center" style="display:none;">
       <h2>Pausa</h2>
       <button id="resumeBtn">Continuar</button>
       <button id="restartBtn">Reiniciar</button>
       <button id="backMenuBtn">Volver al Menú</button>
     </div>
 
-    <!-- Resultado final -->
-    <div id="resultScreen" class="menu-panel" style="display:none;">
+    <div id="resultScreen" class="menu-panel center" style="display:none;">
       <h2>Fin de la Canción</h2>
       <p>Score: <span id="finalScore">0</span></p>
       <p>Max Combo: <span id="finalCombo">0</span></p>
@@ -60,13 +55,10 @@
       <button id="resultMenuBtn">Volver al Menú</button>
     </div>
 
-    <!-- Countdown overlay (3..2..1..GO) -->
     <div id="countdown" class="countdown" style="display:none;">3</div>
 
-    <!-- Canvas principal -->
     <canvas id="scene"></canvas>
 
-    <!-- Main script -->
     <script type="module" src="main_beatsaber.js"></script>
   </body>
 </html>

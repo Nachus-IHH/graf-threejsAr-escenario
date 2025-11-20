@@ -1,6 +1,6 @@
 /* ===========================
-   GLOBAL
-   =========================== */
+    GLOBAL
+    =========================== */
 * { box-sizing: border-box; }
 body {
   margin: 0;
@@ -12,85 +12,158 @@ body {
 canvas#scene { width:100vw; height:100vh; display:block; }
 
 /* ===========================
-   MENU - estilo tipo osu!
-   =========================== */
+    MENU - ESTILO OSU! REDISEÑADO
+    =========================== */
+
+/* Panel Principal - Ahora grande y centrado, usará la miniatura de la canción como fondo */
 .menu-panel {
   position: absolute;
   top: 50%;
-  left: 6%;
-  width: 420px;
-  max-height: 80vh;
-  transform: translateY(-50%);
-  padding: 14px;
-  background: rgba(0,0,0,0.55);
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  left: 50%;
+  width: 80%; /* Tamaño grande para la pantalla de selección */
+  height: 80%; 
+  max-width: 95vw;
+  max-height: 90vh;
+  transform: translate(-50%, -50%); /* Centrado completo */
+  padding: 0; 
+  background: rgba(0,0,0,0.85); /* Fondo base oscuro */
+  border-radius: 16px;
+  border: 2px solid rgba(0,180,255,0.2);
+  box-shadow: 0 15px 50px rgba(0,0,0,0.8);
   z-index: 12;
-  backdrop-filter: blur(6px);
-}
-
-/* Title */
-.menu-panel h2 { margin:0 0 10px 0; font-size:20px; color:#fff; }
-
-/* SONG LIST */
-.song-list { overflow-y: auto; max-height: 48vh; padding-right: 6px; }
-
-/* Song card (inspirado en osu selection) */
-.song-card {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-  padding: 8px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.04);
-  transition: transform .12s ease, box-shadow .12s ease;
-}
-.song-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
-
-/* thumbnail */
-.song-thumb {
-  width: 88px;
-  height: 56px;
-  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  /* Propiedades para la imagen de fondo dinámica (se setea en JS) */
   background-size: cover;
   background-position: center;
-  border: 1px solid rgba(255,255,255,0.06);
+  overflow: hidden; 
+  display: flex; /* Para controlar los elementos internos */
+}
+
+/* Título */
+.menu-panel h2 { margin:0 0 20px 0; font-size:24px; color:#fff; }
+
+/* --------------------------
+   COLUMNA DE LISTA DE CANCIONES (DERECHA)
+   -------------------------- */
+.song-list-container {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 30%; /* La lista ocupa la mitad derecha */
+    height: calc(100% - 80px); /* Deja espacio para los botones inferiores */
+    padding: 20px;
+    background: rgba(0,0,0,0.7); /* Fondo oscuro para que se vea el texto */
+    border-left: 2px solid rgba(255,255,255,0.1);
+}
+.song-list-container h2 { margin-bottom: 20px; }
+.song-list { 
+    max-height: calc(100% - 70px); /* Ajustar scrollable area */
+    overflow-y: auto; 
+    padding-right: 6px; 
+}
+
+/* --------------------------
+   TARJETA DE CANCIÓN (SONG CARD)
+   -------------------------- */
+.song-thumb { display: none; } /* Ocultar la miniatura de la tarjeta (ya es el fondo principal) */
+
+/* Tarjeta base: Estilo Naranja/Other Songs */
+.song-card {
+  display: block; 
+  gap: 10px;
+  background: rgba(255, 140, 0, 0.1); /* Fondo naranja sutil */
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  border-left: 5px solid rgba(255, 140, 0, 0.5); /* Borde naranja */
+  transition: all .2s ease;
+}
+.song-card:hover { 
+  transform: scale(1.02); 
+  box-shadow: 0 0 10px rgba(255, 140, 0, 0.4);
+  background: rgba(255, 140, 0, 0.15);
+}
+
+/* Tarjeta seleccionada: Estilo Cian/Highlighted */
+.song-card.selected { 
+  transform: scale(1.04);
+  border-left: 5px solid #00c8ff; /* Borde cian vibrante */
+  background: rgba(0, 200, 255, 0.2);
+  box-shadow: 0 0 15px rgba(0, 200, 255, 0.5);
 }
 
 /* info */
 .song-info { flex:1; min-width:0; }
-.song-title { font-weight:700; font-size:14px; color:#fff; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.song-sub { font-size:12px; color: rgba(255,255,255,0.72); margin-bottom:6px; }
-
-/* stars + duration row */
-.song-meta { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.song-title { font-weight:700; font-size:16px; color:#fff; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.song-sub { font-size:12px; color: rgba(255,255,255,0.72); margin-bottom:4px; }
+.song-meta { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:4px;}
 .stars { color: #ffd66b; font-size:12px; }
 .song-duration { font-size:12px; color:rgba(255,255,255,0.7); }
 
-/* selected visual */
-.song-card.selected { outline: 2px solid rgba(0,200,255,0.18); transform: translateY(-6px); }
 
-/* difficulties block */
-#difficulties { margin-top: 8px; margin-bottom:8px; }
-.diff-row { display:flex; gap:8px; justify-content:space-between; }
-.diff-btn {
-  flex:1;
-  padding: 8px;
-  border-radius: 8px;
-  border:none;
-  background: rgba(255,255,255,0.06);
-  color: white;
-  cursor:pointer;
-  font-weight:600;
+/* --------------------------
+   CONTROLES INFERIORES
+   -------------------------- */
+
+/* Dificultades y Título (Izquierda Inferior) */
+#difficulties { 
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60%; /* Ocupa el espacio de la izquierda */
+  height: 80px;
+  padding: 0 20px;
+  z-index: 15;
+  background: rgba(0, 0, 0, 0.7);
+  border-top-right-radius: 12px;
+  border-right: 1px solid rgba(255,255,255,0.1);
+  /* Flex para centrar los botones verticalmente */
+  display: flex !important;
+  align-items: center;
+  gap: 20px;
 }
-.diff-btn.selected { background: linear-gradient(90deg, rgba(0,200,255,0.12), rgba(0,150,255,0.12)); box-shadow: 0 6px 22px rgba(0,200,255,0.06); }
+#difficulties h3 { 
+  margin: 0; 
+  font-size: 16px; 
+  white-space: nowrap; 
+  flex-shrink: 0; /* Evita que el título se encoja */
+}
+.diff-row { display:flex; gap:8px; }
+.diff-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
 
-/* START button */
-#startBtn { width:100%; padding:10px; border-radius:8px; border:none; background: linear-gradient(90deg,#00e0ff,#00aaff); color:black; font-weight:700; cursor:pointer; margin-top:8px; }
+/* Botón INICIAR (Derecha Inferior) */
+#startBtn { 
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 30%; /* Ocupa el espacio de la derecha, coincidiendo con la lista */
+  height: 80px; 
+  margin: 0; 
+  padding: 10px; 
+  border-radius: 0 0 16px 0; /* Redondear solo la esquina inferior derecha */
+  border: none; 
+  background: linear-gradient(90deg, #1094E6, #00c8ff);
+  color: black; 
+  font-weight: 800; 
+  font-size: 24px;
+  cursor: pointer; 
+  box-shadow: none;
+  transition: background 0.15s ease;
+}
+#startBtn:hover { 
+    background: linear-gradient(90deg, #00c8ff, #1094E6); 
+}
+
+
+/* ===========================
+    OTROS PANELES
+    =========================== */
 
 /* HUD */
 .hud-panel {
@@ -99,8 +172,20 @@ canvas#scene { width:100vw; height:100vh; display:block; }
   border:1px solid rgba(255,255,255,0.06);
 }
 
-/* Pause/Result same style as menu, placed centered */
-.menu-panel.center { left:50%; transform: translate(-50%,-50%); width:320px; }
+/* Pause/Result: Se centra con una clase auxiliar, pero usa el estilo base del menú */
+.menu-panel.center { 
+    left:50%; 
+    transform: translate(-50%,-50%); 
+    width:320px; 
+    height: auto; 
+    padding: 20px; 
+    background: rgba(0,0,0,0.9);
+    /* Restaurar el estilo de fondo para que no muestre la miniatura de la canción */
+    background-image: none !important;
+    background-color: rgba(0,0,0,0.9);
+}
+.menu-panel.center button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: none; background: #00c8ff; color: black; font-weight: 700; cursor: pointer; }
+
 
 /* Countdown big display */
 .countdown {
@@ -116,8 +201,24 @@ canvas#scene { width:100vw; height:100vh; display:block; }
   pointer-events: none;
 }
 
-/* responsive */
-@media (max-width: 880px) {
-  .menu-panel { left:4%; width: 360px; }
+/* responsive (ajustes menores para pantallas pequeñas) */
+@media (max-width: 900px) {
+  .menu-panel { width: 95vw; height: 95vh; }
   .countdown { font-size: 110px; }
+  
+  /* En móviles, la lista puede ocupar todo el ancho si el menú es más pequeño */
+  .song-list-container { width: 100%; height: calc(100% - 160px); }
+  
+  /* Dificultades y botón de iniciar se apilan */
+  #difficulties, #startBtn { position: relative; width: 100%; height: 80px; }
+  
+  /* Ajustar la fila de dificultades para que se vea bien en ancho completo */
+  #difficulties { 
+      border-top-right-radius: 0;
+      border-bottom-left-radius: 12px;
+      justify-content: space-around;
+      border-right: none;
+      border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  #startBtn { border-radius: 0 0 16px 16px; font-size: 20px;}
 }
