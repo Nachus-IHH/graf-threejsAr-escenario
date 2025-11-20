@@ -218,7 +218,7 @@ scene.add(controllerLeft, controllerRight);
 const controllerModelFactory = new XRControllerModelFactory();
 const grip0 = renderer.xr.getControllerGrip(0); grip0.add(controllerModelFactory.createControllerModel(grip0)); scene.add(grip0);
 const grip1 = renderer.xr.getControllerGrip(1); grip1.add(controllerModelFactory.createControllerModel(grip1)); scene.add(grip1);
-
+/*
 function makeSaberMesh() {
   const geo = new THREE.CylinderGeometry(0.03, 0.03, 0.9, 8);
   const mat = new THREE.MeshStandardMaterial({ emissive: 0x44ccff, emissiveIntensity: 1.2, metalness: 0.1, roughness: 0.6 });
@@ -227,6 +227,30 @@ function makeSaberMesh() {
   // elevar sabers (punto 3)
   m.position.set(0, -0.25, 3);
   return m;
+}
+*/
+function makeSaberMesh(color = 0x00c8ff, length = 1.4) {
+    // 1. Crear el cilindro o la caja para la hoja del sable
+    const bladeGeo = new THREE.CylinderGeometry(0.02, 0.02, length, 8);
+    
+    // 2. ⭐ CORRECCIÓN CLAVE: DESPLAZAR LA GEOMETRÍA HACIA ABAJO
+    // Si la longitud es 1.4, la mitad (0.7) está en Y=0. Moviéndolo -0.7 asegura que se extienda hacia abajo.
+    bladeGeo.translate(0, -length / 2, 0); 
+    
+    const mat = new THREE.MeshBasicMaterial({ color, emissive: color, emissiveIntensity: 2.0 });
+    const saberBlade = new THREE.Mesh(bladeGeo, mat);
+    
+    // 3. Crear el mango (handle)
+    const handleGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.2, 8);
+    const handleMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8 });
+    const handle = new THREE.Mesh(handleGeo, handleMat);
+    handle.position.y = 0.1; // Posición del mango justo en el punto de anclaje
+    
+    const saber = new THREE.Group();
+    saber.add(saberBlade);
+    saber.add(handle);
+    
+    return saber;
 }
 const saberL = makeSaberMesh(); controllerLeft.add(saberL);
 const saberR = makeSaberMesh(); controllerRight.add(saberR);
