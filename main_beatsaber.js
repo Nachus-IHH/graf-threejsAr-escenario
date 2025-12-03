@@ -210,35 +210,41 @@ const grip1 = renderer.xr.getControllerGrip(1); grip1.add(controllerModelFactory
 
 
 function makeSaberMesh(color = 0x00c8ff, length = 1.4) {
-  // 1. Crear el cilindro o la caja para la hoja del sable
+  // Hoja del sable
   const bladeGeo = new THREE.CylinderGeometry(0.02, 0.02, length, 8);
-  // Si la longitud es 1.4, la mitad (0.7) está en Y=0. Moviéndolo -0.7 asegura que se extienda hacia abajo.
   bladeGeo.translate(0, -length / 2, 0);
 
-  const mat = new THREE.MeshBasicMaterial({ color, emissive: color, emissiveIntensity: 2.0 });
+  const mat = new THREE.MeshBasicMaterial({
+    color,
+    emissive: color,
+    emissiveIntensity: 2.0
+  });
+
   const saberBlade = new THREE.Mesh(bladeGeo, mat);
 
-  // 3. Crear el mango (handle)
+  // Mango
   const handleGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.2, 8);
   const handleMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8 });
   const handle = new THREE.Mesh(handleGeo, handleMat);
-  handle.position.y = 0.1; // Posición del mango justo en el punto de anclaje
+  handle.position.y = 0.1;
 
+  // Grupo completo
   const saber = new THREE.Group();
   saber.add(saberBlade);
   saber.add(handle);
 
   // 🔥 FIX: Rotar el grupo para que apunte hacia adelante
-  saber.rotation.x = -Math.PI / 2;
-  
+  saber.rotation.x = Math.PI / 2;
+
   return saber;
 }
+
 const saberL = makeSaberMesh(); controllerLeft.add(saberL);
 const saberR = makeSaberMesh(); controllerRight.add(saberR);
 
 /* tips para detectar colisiones (colocados cerca del extremo de la vara) */
-const saberTipL = new THREE.Object3D(); saberTipL.position.set(0, -0.7, 0); controllerLeft.add(saberTipL);
-const saberTipR = new THREE.Object3D(); saberTipR.position.set(0, -0.7, 0); controllerRight.add(saberTipR);
+const saberTipL = new THREE.Object3D(); saberTipL.position.set(0, 0,-0.7); controllerLeft.add(saberTipL);
+const saberTipR = new THREE.Object3D(); saberTipR.position.set(0, 0,-0.7); controllerRight.add(saberTipR);
 
 /* ========== NOTES (cubos) ========= */
 const notes = []; // stores {mesh, lane, z, hit}
