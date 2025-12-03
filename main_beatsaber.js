@@ -645,15 +645,17 @@ controllerRight.addEventListener('squeezestart', () => {
 /* ========== HIT / COLLISIONS ========== */
 /* We'll check distance from note to the world position of each saber tip.
    Hit effect spawns at the hand position (user requested). */
-/*
+// main_beatsaber.js (Cerca de la línea 439)
 function checkHits() {
-  const DIST_THRESHOLD = 0.95;
+  const DIST_THRESHOLD = 0.95; 
 
+  // 1. Obtener las posiciones MUNDIALES de todos los puntos de colisión
+  
   // Mano Izquierda
   const tipL = new THREE.Vector3(); saberTipL.getWorldPosition(tipL);
   const midL = new THREE.Vector3(); saberMidL.getWorldPosition(midL);
   const baseL = new THREE.Vector3(); saberBaseL.getWorldPosition(baseL);
-
+  
   // Mano Derecha
   const tipR = new THREE.Vector3(); saberTipR.getWorldPosition(tipR);
   const midR = new THREE.Vector3(); saberMidR.getWorldPosition(midR);
@@ -663,95 +665,37 @@ function checkHits() {
     const n = notes[i];
     if (n.userData.hit) continue;
     const notePos = new THREE.Vector3(); n.getWorldPosition(notePos);
-    // approximate z timing
-    const dz = Math.abs(n.position.z - NOTE_HIT_ZONE_Z);
-    const zt = dz / NOTE_SPEED; // zt es el tiempo restante de viaje hasta el centro de golpe
-    const dL = tipL.distanceTo(notePos);
-    const dR = tipR.distanceTo(notePos);
-    if (zt <= 0.5 && (dL < DIST_THRESHOLD || dR < DIST_THRESHOLD)) {
-      // hit: spawn hit effect at the hand used
-      const usedPos = dL < dR ? tipL : tipR;
-
-      spawnExplosion(n, usedPos); // <--- NUEVA LÓGICA DE EXPLOSIÓN
-
-      playSfx(chimeBuffer, 0.35);
-
-      // NUEVO: Puntuación y detección de 'Perfect'
-      let hitText = "";
-      if (zt < 0.04) { // Menos de 40ms de diferencia
-          hitText = "PERFECT";
-      } else if (zt < 0.12) { // Menos de 120ms de diferencia
-          hitText = "GREAT";
-      } else {
-          hitText = "GOOD";
-      }
-      console.log(hitText); // Puedes usar esto como placeholder para mostrar el texto si no tienes TextGeometry
-      // fin de NUEVO
-
-      // scoring better if closer to center (zt small)
-      const add = Math.max(50, Math.floor((0.5 - zt) * 200));
-      score += add;
-      combo += 1;
-      if (combo > maxCombo) maxCombo = combo;
-      if (hudScore) hudScore.textContent = String(score);
-      if (hudCombo) hudCombo.textContent = String(combo);
-
-      // remove note
-      removeNoteAtIndex(i);
-    }
-  }
-}
-*/
-// main_beatsaber.js (Cerca de la línea 439)
-
-function checkHits() {
-  const DIST_THRESHOLD = 0.95; 
-
-  // Obtener las posiciones MUNDIALES de todos los puntos de colisión
-  
-  // Mano Izquierda
-  const tipL = new THREE.Vector3(); saberTipL.getWorldPosition(tipL);
-  const midL = new THREE.Vector3(); saberMidL.getWorldPosition(midL); // NUEVO: Punto medio
-  const baseL = new THREE.Vector3(); saberBaseL.getWorldPosition(baseL); // NUEVO: Punto base
-  
-  // Mano Derecha
-  const tipR = new THREE.Vector3(); saberTipR.getWorldPosition(tipR);
-  const midR = new THREE.Vector3(); saberMidR.getWorldPosition(midR); // NUEVO: Punto medio
-  const baseR = new THREE.Vector3(); saberBaseR.getWorldPosition(baseR); // NUEVO: Punto base
-
-  for (let i = notes.length - 1; i >= 0; i--) {
-    const n = notes[i];
-    if (n.userData.hit) continue;
-    const notePos = new THREE.Vector3(); n.getWorldPosition(notePos);
+    
     // approximate z timing
     const dz = Math.abs(n.position.z - NOTE_HIT_ZONE_Z);
     const zt = dz / NOTE_SPEED; // zt es el tiempo restante de viaje hasta el centro de golpe
     
-    // Calcular la distancia más cercana: usa el mínimo de los 3 puntos de colisión
-    const dL = Math.min(tipL.distanceTo(notePos), midL.distanceTo(notePos), baseL.distanceTo(notePos)); // CAMBIO
-    const dR = Math.min(tipR.distanceTo(notePos), midR.distanceTo(notePos), baseR.distanceTo(notePos)); // CAMBIO
+    // 2. Calcular la distancia más cercana: usa el mínimo de los 3 puntos de colisión
+    // Esto permite golpear con cualquier parte del sable.
+    const dL = Math.min(tipL.distanceTo(notePos), midL.distanceTo(notePos), baseL.distanceTo(notePos));
+    const dR = Math.min(tipR.distanceTo(notePos), midR.distanceTo(notePos), baseR.distanceTo(notePos));
     
     if (zt <= 0.5 && (dL < DIST_THRESHOLD || dR < DIST_THRESHOLD)) {
-      // hit: spawn hit effect at the hand used
-      // Usamos el punto de la punta (tipL/tipR) como marcador de posición para la explosión.
+      
+      // Determinar la mano usada para golpear y la posición para la explosión.
       const usedPos = dL < dR ? tipL : tipR;
       
-      spawnExplosion(n, usedPos); // LÓGICA DE EXPLOSIÓN
+      // Genera la explosión de partículas
+      spawnExplosion(n, usedPos); 
 
       playSfx(chimeBuffer, 0.35);
 
-      // NUEVO: Puntuación y detección de 'Perfect'
+      // 3. Puntuación y detección de 'Perfect'
       let hitText = "";
-      // La lógica de Perfect/Great/Good sigue siendo correcta, ya que usa el timing (zt)
-      if (zt < 0.04) { // Menos de 40ms de diferencia
+      if (zt < 0.04) { // Golpe muy cercano al centro (ej. < 40ms)
           hitText = "PERFECT";
-      } else if (zt < 0.12) { // Menos de 120ms de diferencia
+      } else if (zt < 0.12) { // Golpe aceptable (ej. < 120ms)
           hitText = "GREAT";
       } else {
           hitText = "GOOD";
       }
+      
       console.log(hitText);
-      // fin de NUEVO
 
       // scoring better if closer to center (zt small)
       const add = Math.max(50, Math.floor((0.5 - zt) * 200));
@@ -766,6 +710,7 @@ function checkHits() {
     }
   }
 }
+
 /* NEW: Sistema de Partículas para Explosión */
 function createFragmentMesh(color) {
   const geo = new THREE.BoxGeometry(FRAGMENT_SIZE, FRAGMENT_SIZE, FRAGMENT_SIZE);
