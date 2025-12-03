@@ -243,8 +243,8 @@ const saberL = makeSaberMesh(); controllerLeft.add(saberL);
 const saberR = makeSaberMesh(); controllerRight.add(saberR);
 
 /* tips para detectar colisiones (colocados cerca del extremo de la vara) */
-const saberTipL = new THREE.Object3D(); saberTipL.position.set(0, 0.7, 0); controllerLeft.add(saberTipL);
-const saberTipR = new THREE.Object3D(); saberTipR.position.set(0, 0.7, 0); controllerRight.add(saberTipR);
+const saberTipL = new THREE.Object3D(); saberTipL.position.set(0, -0.7, 0); controllerLeft.add(saberTipL);
+const saberTipR = new THREE.Object3D(); saberTipR.position.set(0, -0.7, 0); controllerRight.add(saberTipR);
 
 /* ========== NOTES (cubos) ========= */
 const notes = []; // stores {mesh, lane, z, hit}
