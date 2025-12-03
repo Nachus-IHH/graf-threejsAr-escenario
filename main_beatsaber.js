@@ -208,11 +208,12 @@ const controllerModelFactory = new XRControllerModelFactory();
 const grip0 = renderer.xr.getControllerGrip(0); grip0.add(controllerModelFactory.createControllerModel(grip0)); scene.add(grip0);
 const grip1 = renderer.xr.getControllerGrip(1); grip1.add(controllerModelFactory.createControllerModel(grip1)); scene.add(grip1);
 
+
 function makeSaberMesh(color = 0x00c8ff, length = 1.4) {
   // 1. Crear el cilindro o la caja para la hoja del sable
   const bladeGeo = new THREE.CylinderGeometry(0.02, 0.02, length, 8);
   // Si la longitud es 1.4, la mitad (0.7) está en Y=0. Moviéndolo -0.7 asegura que se extienda hacia abajo.
-  bladeGeo.translate(0, length / 2, 0);
+  bladeGeo.translate(0, -length / 2, 0);
 
   const mat = new THREE.MeshBasicMaterial({ color, emissive: color, emissiveIntensity: 2.0 });
   const saberBlade = new THREE.Mesh(bladeGeo, mat);
@@ -227,6 +228,9 @@ function makeSaberMesh(color = 0x00c8ff, length = 1.4) {
   saber.add(saberBlade);
   saber.add(handle);
 
+  // 🔥 FIX: Rotar el grupo para que apunte hacia adelante
+  saber.rotation.x = -Math.PI / 2;
+  
   return saber;
 }
 const saberL = makeSaberMesh(); controllerLeft.add(saberL);
