@@ -29,6 +29,12 @@ const noteLanes = [-1.8, -0.6, 0.6, 1.8];
 const MIN_Z_SEPARATION = 1.6; // separación mínima entre notas en z para evitar sobreposición
 const MAX_SAME_Z = 2; // máximo 2 notas con la misma z (para pegar con dos manos)
 
+/* HIT EFFECTS / PARTICLES */
+const FRAGMENT_COUNT = 10;
+const FRAGMENT_SIZE = 0.15;
+const FRAGMENT_DURATION = 350; // ms
+const fragments = []; // array global para mantener el rastro de las partículas activas
+
 
 const SONGS = [
   {
@@ -630,6 +636,7 @@ controllerRight.addEventListener('squeezestart', () => {
 /* ========== HIT / COLLISIONS ========== */
 /* We'll check distance from note to the world position of each saber tip.
    Hit effect spawns at the hand position (user requested). */
+/*
 function checkHits() {
   const DIST_THRESHOLD = 0.95;
   const tipL = new THREE.Vector3(); saberTipL.getWorldPosition(tipL);
@@ -663,8 +670,103 @@ function checkHits() {
     }
   }
 }
+*/
+// main_beatsaber.js (cerca de la línea 439)
 
-/* spawn hit effect at world position (hand) */
+function checkHits() {
+  const DIST_THRESHOLD = 0.95;
+  const tipL = new THREE.Vector3(); saberTipL.getWorldPosition(tipL);
+  const tipR = new THREE.Vector3(); saberTipR.getWorldPosition(tipR);
+
+  for (let i = notes.length - 1; i >= 0; i--) {
+    const n = notes[i];
+    if (n.userData.hit) continue;
+    const notePos = new THREE.Vector3(); n.getWorldPosition(notePos);
+    // approximate z timing
+    const dz = Math.abs(n.position.z - NOTE_HIT_ZONE_Z);
+    const zt = dz / NOTE_SPEED; // zt es el tiempo restante de viaje hasta el centro de golpe
+    const dL = tipL.distanceTo(notePos);
+    const dR = tipR.distanceTo(notePos);
+    if (zt <= 0.5 && (dL < DIST_THRESHOLD || dR < DIST_THRESHOLD)) {
+      // hit: spawn hit effect at the hand used
+      const usedPos = dL < dR ? tipL : tipR;
+      
+      // ANTES: spawnHitEffect(usedPos);
+      // AHORA: Genera la explosión de partículas
+      spawnExplosion(n, usedPos); // <--- NUEVA LÓGICA DE EXPLOSIÓN
+
+      playSfx(chimeBuffer, 0.35);
+
+      // NUEVO: Puntuación y detección de 'Perfect'
+      let hitText = "";
+      if (zt < 0.04) { // Menos de 40ms de diferencia
+          hitText = "PERFECT";
+      } else if (zt < 0.12) { // Menos de 120ms de diferencia
+          hitText = "GREAT";
+      } else {
+          hitText = "GOOD";
+      }
+      console.log(hitText); // Puedes usar esto como placeholder para mostrar el texto si no tienes TextGeometry
+      // fin de NUEVO
+
+      // scoring better if closer to center (zt small)
+      const add = Math.max(50, Math.floor((0.5 - zt) * 200));
+      score += add;
+      combo += 1;
+      if (combo > maxCombo) maxCombo = combo;
+      if (hudScore) hudScore.textContent = String(score);
+      if (hudCombo) hudCombo.textContent = String(combo);
+
+      // remove note
+      removeNoteAtIndex(i);
+    }
+  }
+}
+
+/* NEW: Sistema de Partículas para Explosión */
+function createFragmentMesh(color) {
+  const geo = new THREE.BoxGeometry(FRAGMENT_SIZE, FRAGMENT_SIZE, FRAGMENT_SIZE);
+  // Usa un material con emissive para que brille intensamente
+  const mat = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide });
+  const mesh = new THREE.Mesh(geo, mat);
+  return mesh;
+}
+
+function spawnExplosion(note, hitPosition) {
+  // Asegúrate de usar el color de la nota golpeada para los fragmentos
+  const noteColor = note.material.color.getHex();
+  
+  for (let i = 0; i < FRAGMENT_COUNT; i++) {
+    const fragment = createFragmentMesh(noteColor);
+    
+    // 1. Posición inicial
+    fragment.position.copy(hitPosition);
+
+    // 2. Velocidad inicial aleatoria
+    // Genera un vector de velocidad aleatorio para simular una explosión
+    const speedFactor = 5;
+    const velocity = new THREE.Vector3(
+      (Math.random() - 0.5) * speedFactor, // X
+      Math.random() * speedFactor * 0.8,  // Y (Ligero impulso hacia arriba)
+      (Math.random() - 0.5) * speedFactor // Z
+    );
+    
+    // 3. Almacenar datos de la partícula
+    fragment.userData.velocity = velocity;
+    fragment.userData.startTime = performance.now();
+    fragment.userData.lifetime = FRAGMENT_DURATION;
+
+    scene.add(fragment);
+    fragments.push(fragment);
+  }
+}
+
+// *** IMPORTANTE: Elimina o comenta las funciones spawnHitEffectAt y spawnHitEffect ***
+/*
+function spawnHitEffectAt(pos) { ... } // ELIMINAR O COMENTAR
+function spawnHitEffect(handWorldPos) { spawnHitEffectAt(handWorldPos); } // ELIMINAR O COMENTAR
+*/
+/* spawn hit effect at world position (hand)
 function spawnHitEffectAt(pos) {
   const g = new THREE.SphereGeometry(0.16, 8, 8);
   const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0xfff2c8 }));
@@ -673,7 +775,7 @@ function spawnHitEffectAt(pos) {
   setTimeout(() => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }, 220);
 }
 function spawnHitEffect(handWorldPos) { spawnHitEffectAt(handWorldPos); }
-
+*/
 /* ========== UPDATE LOOP: spawn by pattern, move notes, handle misses ========== */
 const clock = new THREE.Clock();
 
@@ -726,19 +828,39 @@ function update(dt) {
   // check hits
   checkHits(now);
 
+  // NEW: Animar y limpiar fragmentos de explosión
+  const pNow = performance.now();
+  for (let i = fragments.length - 1; i >= 0; i--) {
+    const f = fragments[i];
+    const user = f.userData;
+    const elapsed = pNow - user.startTime;
+    const t = elapsed / user.lifetime; // 0.0 -> 1.0 (tiempo normalizado)
+
+    if (t >= 1) {
+      // Si la vida útil termina, remueve el fragmento
+      scene.remove(f);
+      if (f.geometry) f.geometry.dispose();
+      if (f.material) f.material.dispose();
+      fragments.splice(i, 1);
+    } else {
+      // Aplicar gravedad (simulación simple)
+      user.velocity.y -= 9.8 * dt * 0.25; // Gravedad reducida
+
+      // Mover el fragmento
+      f.position.x += user.velocity.x * dt;
+      f.position.y += user.velocity.y * dt;
+      f.position.z += user.velocity.z * dt;
+
+      // Reducir escala (o transparencia/emissive) con el tiempo
+      const scale = Math.max(0, 1 - t * 0.9);
+      f.scale.set(scale, scale, scale);
+    }
+  }
+  // FIN NEW: Animación de fragmentos
+
   // check end: when song duration passed and no notes
   const songDuration = (activeSong && activeSong.pattern) ? (activeSong.pattern[activeSong.pattern.length - 1]?.t + 4.0) : (activeSong?.duration || 60);
-  /*
-  if (now > songDuration && notes.length === 0) {
-    playing = false;
-    if (musicAudio) { try { musicAudio.stop(); } catch (e) { } musicAudio = null; }
-    setAmbientVolume(0.4);
-    // show results
-    finalScoreEl.textContent = String(score);
-    finalComboEl.textContent = String(maxCombo);
-    resultScreen.style.display = 'block';
-  }
-  */
+  
   if (now > songDuration && notes.length === 0) {
     playing = false;
     if (musicAudio) { try { musicAudio.stop(); } catch (e) { } musicAudio = null; }
@@ -748,7 +870,7 @@ function update(dt) {
     finalComboEl.textContent = String(maxCombo);
     resultScreen.style.display = 'block';
 
-    // ⭐ NUEVO: Ajuste para VR: Reposicionar la pantalla de resultados
+    // Ajuste para VR: Reposicionar la pantalla de resultados
     if (renderer.xr.isPresenting) {
       resultScreen.style.transform = 'translate(-50%, -50%) translate3d(0, 0, -1.5m)';
     } else {
@@ -756,8 +878,6 @@ function update(dt) {
         resultScreen.style.transform = 'translate(-50%, -50%)';
     }
   }
-
-
 }
 
 /* ========== RENDER LOOP ========= */
