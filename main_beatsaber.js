@@ -249,8 +249,17 @@ const saberL = makeSaberMesh(); controllerLeft.add(saberL);
 const saberR = makeSaberMesh(); controllerRight.add(saberR);
 
 /* tips para detectar colisiones (colocados cerca del extremo de la vara) */
-const saberTipL = new THREE.Object3D(); saberTipL.position.set(0, -0.7, 0); controllerLeft.add(saberTipL);
-const saberTipR = new THREE.Object3D(); saberTipR.position.set(0, -0.7, 0); controllerRight.add(saberTipR);
+// TIP: Extremo de la hoja (a 1.4 unidades de distancia)
+const saberTipL = new THREE.Object3D(); saberTipL.position.set(0, -1.4, 0); controllerLeft.add(saberTipL); // CORRECCIÓN: Usar Z=-1.4
+const saberTipR = new THREE.Object3D(); saberTipR.position.set(0, -1.4, 0); controllerRight.add(saberTipR); // CORRECCIÓN: Usar Z=-1.4
+
+// MID: Centro de la hoja (a 0.7 unidades de distancia)
+const saberMidL = new THREE.Object3D(); saberTipL.position.set(0, -0.7, 0); controllerLeft.add(saberTipL);
+const saberMidR = new THREE.Object3D(); saberTipR.position.set(0, -0.7, 0); controllerRight.add(saberTipR);
+
+// BASE: Cerca del mango (origen)
+const saberBaseL = new THREE.Object3D(); saberBaseL.position.set(0, 0, 0.0); controllerLeft.add(saberBaseL); // NUEVO PUNTO (Base)
+const saberBaseR = new THREE.Object3D(); saberBaseR.position.set(0, 0, 0.0); controllerRight.add(saberBaseR); // NUEVO PUNTO (Base)
 
 /* ========== NOTES (cubos) ========= */
 const notes = []; // stores {mesh, lane, z, hit}
@@ -639,44 +648,16 @@ controllerRight.addEventListener('squeezestart', () => {
 /*
 function checkHits() {
   const DIST_THRESHOLD = 0.95;
+
+  // Mano Izquierda
   const tipL = new THREE.Vector3(); saberTipL.getWorldPosition(tipL);
+  const midL = new THREE.Vector3(); saberMidL.getWorldPosition(midL);
+  const baseL = new THREE.Vector3(); saberBaseL.getWorldPosition(baseL);
+
+  // Mano Derecha
   const tipR = new THREE.Vector3(); saberTipR.getWorldPosition(tipR);
-
-  for (let i = notes.length - 1; i >= 0; i--) {
-    const n = notes[i];
-    if (n.userData.hit) continue;
-    const notePos = new THREE.Vector3(); n.getWorldPosition(notePos);
-    // approximate z timing
-    const dz = Math.abs(n.position.z - NOTE_HIT_ZONE_Z);
-    const zt = dz / NOTE_SPEED;
-    const dL = tipL.distanceTo(notePos);
-    const dR = tipR.distanceTo(notePos);
-    if (zt <= 0.5 && (dL < DIST_THRESHOLD || dR < DIST_THRESHOLD)) {
-      // hit: spawn hit effect at the hand used
-      const usedPos = dL < dR ? tipL : tipR;
-      spawnHitEffect(usedPos);
-      playSfx(chimeBuffer, 0.35);
-
-      // scoring better if closer to center (zt small)
-      const add = Math.max(50, Math.floor((0.5 - zt) * 200));
-      score += add;
-      combo += 1;
-      if (combo > maxCombo) maxCombo = combo;
-      if (hudScore) hudScore.textContent = String(score);
-      if (hudCombo) hudCombo.textContent = String(combo);
-
-      // remove note
-      removeNoteAtIndex(i);
-    }
-  }
-}
-*/
-// main_beatsaber.js (cerca de la línea 439)
-
-function checkHits() {
-  const DIST_THRESHOLD = 0.95;
-  const tipL = new THREE.Vector3(); saberTipL.getWorldPosition(tipL);
-  const tipR = new THREE.Vector3(); saberTipR.getWorldPosition(tipR);
+  const midR = new THREE.Vector3(); saberMidR.getWorldPosition(midR);
+  const baseR = new THREE.Vector3(); saberBaseR.getWorldPosition(baseR);
 
   for (let i = notes.length - 1; i >= 0; i--) {
     const n = notes[i];
@@ -690,9 +671,7 @@ function checkHits() {
     if (zt <= 0.5 && (dL < DIST_THRESHOLD || dR < DIST_THRESHOLD)) {
       // hit: spawn hit effect at the hand used
       const usedPos = dL < dR ? tipL : tipR;
-      
-      // ANTES: spawnHitEffect(usedPos);
-      // AHORA: Genera la explosión de partículas
+
       spawnExplosion(n, usedPos); // <--- NUEVA LÓGICA DE EXPLOSIÓN
 
       playSfx(chimeBuffer, 0.35);
@@ -722,7 +701,71 @@ function checkHits() {
     }
   }
 }
+*/
+// main_beatsaber.js (Cerca de la línea 439)
 
+function checkHits() {
+  const DIST_THRESHOLD = 0.95; 
+
+  // Obtener las posiciones MUNDIALES de todos los puntos de colisión
+  
+  // Mano Izquierda
+  const tipL = new THREE.Vector3(); saberTipL.getWorldPosition(tipL);
+  const midL = new THREE.Vector3(); saberMidL.getWorldPosition(midL); // NUEVO: Punto medio
+  const baseL = new THREE.Vector3(); saberBaseL.getWorldPosition(baseL); // NUEVO: Punto base
+  
+  // Mano Derecha
+  const tipR = new THREE.Vector3(); saberTipR.getWorldPosition(tipR);
+  const midR = new THREE.Vector3(); saberMidR.getWorldPosition(midR); // NUEVO: Punto medio
+  const baseR = new THREE.Vector3(); saberBaseR.getWorldPosition(baseR); // NUEVO: Punto base
+
+  for (let i = notes.length - 1; i >= 0; i--) {
+    const n = notes[i];
+    if (n.userData.hit) continue;
+    const notePos = new THREE.Vector3(); n.getWorldPosition(notePos);
+    // approximate z timing
+    const dz = Math.abs(n.position.z - NOTE_HIT_ZONE_Z);
+    const zt = dz / NOTE_SPEED; // zt es el tiempo restante de viaje hasta el centro de golpe
+    
+    // Calcular la distancia más cercana: usa el mínimo de los 3 puntos de colisión
+    const dL = Math.min(tipL.distanceTo(notePos), midL.distanceTo(notePos), baseL.distanceTo(notePos)); // CAMBIO
+    const dR = Math.min(tipR.distanceTo(notePos), midR.distanceTo(notePos), baseR.distanceTo(notePos)); // CAMBIO
+    
+    if (zt <= 0.5 && (dL < DIST_THRESHOLD || dR < DIST_THRESHOLD)) {
+      // hit: spawn hit effect at the hand used
+      // Usamos el punto de la punta (tipL/tipR) como marcador de posición para la explosión.
+      const usedPos = dL < dR ? tipL : tipR;
+      
+      spawnExplosion(n, usedPos); // LÓGICA DE EXPLOSIÓN
+
+      playSfx(chimeBuffer, 0.35);
+
+      // NUEVO: Puntuación y detección de 'Perfect'
+      let hitText = "";
+      // La lógica de Perfect/Great/Good sigue siendo correcta, ya que usa el timing (zt)
+      if (zt < 0.04) { // Menos de 40ms de diferencia
+          hitText = "PERFECT";
+      } else if (zt < 0.12) { // Menos de 120ms de diferencia
+          hitText = "GREAT";
+      } else {
+          hitText = "GOOD";
+      }
+      console.log(hitText);
+      // fin de NUEVO
+
+      // scoring better if closer to center (zt small)
+      const add = Math.max(50, Math.floor((0.5 - zt) * 200));
+      score += add;
+      combo += 1;
+      if (combo > maxCombo) maxCombo = combo;
+      if (hudScore) hudScore.textContent = String(score);
+      if (hudCombo) hudCombo.textContent = String(combo);
+
+      // remove note
+      removeNoteAtIndex(i);
+    }
+  }
+}
 /* NEW: Sistema de Partículas para Explosión */
 function createFragmentMesh(color) {
   const geo = new THREE.BoxGeometry(FRAGMENT_SIZE, FRAGMENT_SIZE, FRAGMENT_SIZE);
@@ -761,21 +804,6 @@ function spawnExplosion(note, hitPosition) {
   }
 }
 
-// *** IMPORTANTE: Elimina o comenta las funciones spawnHitEffectAt y spawnHitEffect ***
-/*
-function spawnHitEffectAt(pos) { ... } // ELIMINAR O COMENTAR
-function spawnHitEffect(handWorldPos) { spawnHitEffectAt(handWorldPos); } // ELIMINAR O COMENTAR
-*/
-/* spawn hit effect at world position (hand)
-function spawnHitEffectAt(pos) {
-  const g = new THREE.SphereGeometry(0.16, 8, 8);
-  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0xfff2c8 }));
-  m.position.copy(pos);
-  scene.add(m);
-  setTimeout(() => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }, 220);
-}
-function spawnHitEffect(handWorldPos) { spawnHitEffectAt(handWorldPos); }
-*/
 /* ========== UPDATE LOOP: spawn by pattern, move notes, handle misses ========== */
 const clock = new THREE.Clock();
 
