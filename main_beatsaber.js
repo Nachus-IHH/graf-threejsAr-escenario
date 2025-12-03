@@ -249,17 +249,6 @@ const saberL = makeSaberMesh(); controllerLeft.add(saberL);
 const saberR = makeSaberMesh(); controllerRight.add(saberR);
 
 /* tips para detectar colisiones (colocados cerca del extremo de la vara) */
-const saberTipL = new THREE.Object3D(); saberTipL.position.set(0, 0, -1.4); controllerLeft.add(saberTipL); 
-const saberTipR = new THREE.Object3D(); saberTipR.position.set(0, 0, -1.4); controllerRight.add(saberTipR); 
-
-// MID: Centro de la hoja (a -0.7 unidades de distancia en Z)
-const saberMidL = new THREE.Object3D(); saberMidL.position.set(0, 0, -0.7); controllerLeft.add(saberMidL);
-const saberMidR = new THREE.Object3D(); saberMidR.position.set(0, 0, -0.7); controllerRight.add(saberMidR);
-
-// BASE: Cerca del mango (origen)
-const saberBaseL = new THREE.Object3D(); saberBaseL.position.set(0, 0, 0.0); controllerLeft.add(saberBaseL); 
-const saberBaseR = new THREE.Object3D(); saberBaseR.position.set(0, 0, 0.0); controllerRight.add(saberBaseR);
-/*
 // TIP: Extremo de la hoja (a 1.4 unidades de distancia)
 const saberTipL = new THREE.Object3D(); saberTipL.position.set(0, -1.4, 0); controllerLeft.add(saberTipL); // CORRECCIÓN: Usar Z=-1.4
 const saberTipR = new THREE.Object3D(); saberTipR.position.set(0, -1.4, 0); controllerRight.add(saberTipR); // CORRECCIÓN: Usar Z=-1.4
@@ -271,7 +260,6 @@ const saberMidR = new THREE.Object3D(); saberTipR.position.set(0, -0.7, 0); cont
 // BASE: Cerca del mango (origen)
 const saberBaseL = new THREE.Object3D(); saberBaseL.position.set(0, 0, 0.0); controllerLeft.add(saberBaseL); // NUEVO PUNTO (Base)
 const saberBaseR = new THREE.Object3D(); saberBaseR.position.set(0, 0, 0.0); controllerRight.add(saberBaseR); // NUEVO PUNTO (Base)
-*/
 
 /* ========== NOTES (cubos) ========= */
 const notes = []; // stores {mesh, lane, z, hit}
