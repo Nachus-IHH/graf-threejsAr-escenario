@@ -212,7 +212,7 @@ function makeSaberMesh(color = 0x00c8ff, length = 1.4) {
   // 1. Crear el cilindro o la caja para la hoja del sable
   const bladeGeo = new THREE.CylinderGeometry(0.02, 0.02, length, 8);
   // Si la longitud es 1.4, la mitad (0.7) está en Y=0. Moviéndolo -0.7 asegura que se extienda hacia abajo.
-  bladeGeo.translate(0, -length / 2, 0);
+  bladeGeo.translate(0, length / 2, 0);
 
   const mat = new THREE.MeshBasicMaterial({ color, emissive: color, emissiveIntensity: 2.0 });
   const saberBlade = new THREE.Mesh(bladeGeo, mat);
