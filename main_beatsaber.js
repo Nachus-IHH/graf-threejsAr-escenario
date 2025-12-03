@@ -104,6 +104,7 @@ player.position.set(0, 1.6, 3);
 player.add(camera);
 scene.add(player);
 
+
 /* PMREM / HDRI (usando tus constantes) */
 const pmremGen = new THREE.PMREMGenerator(renderer);
 pmremGen.compileEquirectangularShader();
@@ -115,27 +116,6 @@ async function setHDRI(url) {
 }
 setHDRI(HDRI_LOCAL).catch(() => setHDRI(HDRI_FALLBACK).catch(e => console.warn('Sin HDRI:', e)));
 
-/* Tapete de baile del jugador - piso 
-const textureLoader = new THREE.TextureLoader();
-textureLoader.load(DANCE_MAT_TEXTURE, (texture) => {
-    const planeGeometry = new THREE.PlaneGeometry(6, 4); // Ajusta el tamaño (6x4 es grande)
-    
-    // Crear material con la textura. Usa alphaMap si el tapete tiene transparencia.
-    const planeMaterial = new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true, // Importante para que se vea el fondo
-        side: THREE.DoubleSide
-    });
-    
-    const danceMat = new THREE.Mesh(planeGeometry, planeMaterial);
-    danceMat.rotation.x = -Math.PI / 2; 
-    
-    // Posicionarlo en el centro de la zona de golpe (Z=-1.8) y en el suelo (Y=0.01)
-    danceMat.position.y = 0.01; 
-    danceMat.position.z = NOTE_HIT_ZONE_Z; // Zona de golpe
-    camera.add(danceMat); 
-});
-*/
 /* Lights */
 const hemiLight = new THREE.HemisphereLight(0x8fb2ff, 0x0a0c10, 0.35);
 scene.add(hemiLight);
@@ -209,14 +189,6 @@ function playSfx(buffer, vol = 0.9) {
 }
 
 /* ========== VR CONTROLLERS + SABERS ========== */
-/*
-const vrBtn = VRButton.createButton(renderer); vrBtn.classList.add('vr-button'); 
-//document.body.appendChild(vrBtn);
-document.body.appendChild(VRButton.createButton(renderer, {
-  optionalFeatures: ["dom-overlay"],
-  domOverlay: { root: document.body }
-}));
-*/
 // ACTIVA VR + DOM OVERLAY
 const vrBtn = VRButton.createButton(renderer, {
   optionalFeatures: ["dom-overlay"],       // habilita DOM Overlay dentro del visor VR
@@ -235,17 +207,7 @@ scene.add(controllerLeft, controllerRight);
 const controllerModelFactory = new XRControllerModelFactory();
 const grip0 = renderer.xr.getControllerGrip(0); grip0.add(controllerModelFactory.createControllerModel(grip0)); scene.add(grip0);
 const grip1 = renderer.xr.getControllerGrip(1); grip1.add(controllerModelFactory.createControllerModel(grip1)); scene.add(grip1);
-/*
-function makeSaberMesh() {
-  const geo = new THREE.CylinderGeometry(0.03, 0.03, 0.9, 8);
-  const mat = new THREE.MeshStandardMaterial({ emissive: 0x44ccff, emissiveIntensity: 1.2, metalness: 0.1, roughness: 0.6 });
-  const m = new THREE.Mesh(geo, mat);
-  m.rotation.x = Math.PI / 2;
-  // elevar sabers (punto 3)
-  m.position.set(0, -0.25, 3);
-  return m;
-}
-*/
+
 function makeSaberMesh(color = 0x00c8ff, length = 1.4) {
   // 1. Crear el cilindro o la caja para la hoja del sable
   const bladeGeo = new THREE.CylinderGeometry(0.02, 0.02, length, 8);
@@ -843,9 +805,32 @@ document.querySelectorAll('.diff-btn').forEach(btn => {
   });
 });
 
-/* End of file - comentarios / recomendaciones:
- - Si la miniatura no carga desde '/mnt/data/...' asegúrate de copiar la imagen a tu carpeta pública (ej. assets/img/) y actualizar las rutas en SONGS.thumb.
- - HDRI requiere servidor (cors). Si pruebas con file:// puede fallar.
+
+// Esperar DOM
+
+document.getElementById("menu").style.display = "none";
+document.getElementById("introOverlay").style.display = "flex";
+
+window.addEventListener('DOMContentLoaded', () => {
+  const introOverlay = document.getElementById('introOverlay');
+  const btnStart = document.getElementById('btnStartGame');
+
+  btnStart.addEventListener('click', () => {
+    // ocultar overlay
+    introOverlay.style.display = 'none';
+
+    // ahora podemos mostrar menu o inicializar juego
+    const menu = document.getElementById('menu');
+    menu.style.display = 'flex';  // o block, según tu diseño
+
+    // Opcional: si quieres entrar en fullscreen cuando empieza
+    // document.documentElement.requestFullscreen()?.catch(e => console.warn("Fullscreen no permitido:", e));
+
+    // Opcional: si quieres que Three.js / VR se inicie aquí en vez de antes
+    initGame();  // tu función que inicia escena / render / lógica
+  });
+});
+/* End of file
  - Ajustes finos: MIN_Z_SEPARATION, NOTE_SPEED y NOTE_SPAWN_Z para calibrar ritmo.
  - Para mapas reales sustituye genPatternForDuration por importación de .json beatmaps.
  */

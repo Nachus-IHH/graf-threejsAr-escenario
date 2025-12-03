@@ -18,6 +18,39 @@
   </head>
 
   <body>
+    <!-- PORTADA / INTRO SCREEN -->
+  <div id="introOverlay">
+    <div id="introContent">
+      <h1>Beat Saber Web</h1>
+
+      <h2>Integrantes</h2>
+      <p>Lara Cruz Brandon Javier</p>
+      <p>Hernandez Hernandez Ignacio</p>
+
+      <h2>Instrucciones</h2>
+      <ul>
+        <li>Seleccione la música y dificultad en el menú.</li>
+        <li>Active el modo VR si usa lentes compatibles.</li>
+        <li>Pulse “Iniciar” para empezar; luego basta mover las manos — no necesita presionar botones.</li>
+        <li>Golpea los cubos para ganar puntos.</li>
+        <li>Para abrir el menú durante la partida, presiona el botón de las tres líneas.</li>
+      </ul>
+
+      <!-- DEMO / GIF / VIDEO: puedes usar <img> o <video> -->
+      <div id="demoContainer">
+        <!-- ejemplo con video
+        <video id="demoVideo" width="320" controls loop muted>
+          <source src="assets/demo_movimiento.mp4" type="video/mp4">
+          Tu navegador no soporta video.
+        </video>
+        -->
+        <img id="demoVideo" src="assets/demo_movimiento.gif" alt="Demo movimiento" />
+      </div>
+
+      <button id="btnStartGame">¡Jugar!</button>
+    </div>
+  </div>
+
     <div id="menu" class="menu-panel">
       
       <div class="song-list-container">
